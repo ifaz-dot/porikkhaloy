@@ -14,13 +14,13 @@
     <div class="toolbar">
       <div>
         <h1>ফলাফল ও অংশগ্রহণ</h1>
-        <p class="hint">সকল শিক্ষার্থীর অংশগ্রহণের তালিকা। একবার ব্যবহৃত IP আবার চালু করতে "রিসেট" চাপো।</p>
+        <p class="hint">সকল শিক্ষার্থীর অংশগ্রহণের তালিকা (সব ডিভাইস থেকে)।</p>
       </div>
     </div>
 
     <table>
       <thead>
-        <tr><th>নাম</th><th>ক্লাস / রোল</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>নেটওয়ার্ক লক</th></tr>
+        <tr><th>নাম</th><th>ক্লাস / রোল</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>সময়</th></tr>
       </thead>
       <tbody id="results-body"></tbody>
     </table>
@@ -29,55 +29,36 @@
 
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
-  import { getQuiz } from "../js/data.js";
+  import { getAllAttempts, getAllQuizzes } from "../js/data.js";
 
   renderAdminNav("results.html");
 
-  function loadAttempts() {
-    return Object.keys(localStorage)
-      .filter(k => k.startsWith("attempt_a_"))
-      .map(k => JSON.parse(localStorage.getItem(k)))
-      .sort((a, b) => b.startedAt - a.startedAt);
+  const attempts = await getAllAttempts();
+  const quizzes = await getAllQuizzes();
+  const quizById = Object.fromEntries(quizzes.map(q => [q.id, q]));
+
+  const body = document.getElementById("results-body");
+  if (attempts.length === 0) {
+    body.innerHTML = `<tr><td colspan="6" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
   }
-
-  async function render() {
-    const body = document.getElementById("results-body");
-    const attempts = loadAttempts();
-    body.innerHTML = "";
-    if (attempts.length === 0) {
-      body.innerHTML = `<tr><td colspan="6" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
-      return;
-    }
-    for (const a of attempts) {
-      const quiz = await getQuiz(a.quizId);
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${a.student?.name || "—"}</td>
-        <td>${a.student?.cls || "—"} / ${a.student?.roll || "—"}</td>
-        <td>${quiz ? quiz.title_bn : a.quizId}</td>
-        <td>${a.score !== undefined ? `${a.score}/${a.total}` : "চলমান"}</td>
-        <td>${a.status === "ended-early"
-          ? '<span class="pill warn">সময়ের আগে বন্ধ</span>'
-          : a.status === "completed"
-            ? '<span class="pill ok">সম্পন্ন</span>'
-            : '<span class="hint">চলমান</span>'}</td>
-        <td><button class="btn btn-outline" data-quiz="${a.quizId}" style="padding:6px 12px; font-size:.78rem;">রিসেট</button></td>
-      `;
-      body.appendChild(tr);
-    }
-
-    body.querySelectorAll("button[data-quiz]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        // Real backend: deletes the /ipAttempts/{quizId}_{ip} doc so
-        // that IP can attempt the quiz again (e.g. shared school PC).
-        localStorage.removeItem(`attempt_lock_${btn.dataset.quiz}`);
-        btn.textContent = "রিসেট হয়েছে ✓";
-        btn.disabled = true;
-      });
-    });
-  }
-
-  await render();
+  attempts.forEach(a => {
+    const quiz = quizById[a.quizId];
+    const when = a.startedAt ? new Date(a.startedAt).toLocaleString("bn-BD") : "—";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${a.student?.name || "—"}</td>
+      <td>${a.student?.cls || "—"} / ${a.student?.roll || "—"}</td>
+      <td>${quiz ? quiz.title_bn : a.quizId}</td>
+      <td>${a.score !== undefined ? `${a.score}/${a.total}` : "চলমান"}</td>
+      <td>${a.status === "ended-early"
+        ? '<span class="pill warn">সময়ের আগে বন্ধ</span>'
+        : a.status === "completed"
+          ? '<span class="pill ok">সম্পন্ন</span>'
+          : '<span class="hint">চলমান</span>'}</td>
+      <td class="hint">${when}</td>
+    `;
+    body.appendChild(tr);
+  });
 </script>
 </body>
 </html>
