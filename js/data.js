@@ -117,7 +117,30 @@ export function parseQuestionCSV(text) {
     }));
 }
 
-/* ---------------- attempt handling (localStorage — unchanged) ---------------- */
+/* ---------------- attempts (Firestore — shared across all devices) ---------------- */
+
+export async function submitAttemptToCloud(attempt) {
+  return addDoc(collection(db, "attempts"), {
+    attemptId: attempt.attemptId,
+    quizId: attempt.quizId,
+    student: attempt.student,
+    answers: attempt.answers,
+    status: attempt.status,
+    score: attempt.score,
+    total: attempt.total,
+    startedAt: attempt.startedAt,
+    endedAt: attempt.endedAt,
+  });
+}
+
+export async function getAllAttempts() {
+  const snap = await getDocs(collection(db, "attempts"));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+}
+
+/* ---------------- attempt handling (localStorage — per-device IP-lock only) ---------------- */
 
 function attemptKey(quizId) { return `attempt_lock_${quizId}`; }
 
@@ -161,5 +184,12 @@ export async function finalizeAttempt(attemptId, status) {
   attempt.total = quiz.questions.length;
   attempt.endedAt = Date.now();
   saveAttempt(attempt);
+  try {
+    await submitAttemptToCloud(attempt);
+  } catch (e) {
+    // If this fails (offline, rules issue), the attempt still exists
+    // locally and result.html can still show the student their score.
+    console.error("Could not sync attempt to Firestore:", e);
+  }
   return attempt;
 }
