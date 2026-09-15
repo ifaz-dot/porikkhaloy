@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign up — Porikkhaloy</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell" style="max-width:420px;">
+    <h1 style="font-size:1.6rem;" data-i18n="signUpTitle">Create your account</h1>
+    <p class="hint" style="margin-bottom:24px;" data-i18n="signUpDesc">Save your profile so you don't need to re-enter your info every time.</p>
+
+    <div class="error-box" id="err"></div>
+
+    <button class="btn btn-outline" id="google-btn" style="width:100%; margin-bottom:18px;" data-i18n="continueGoogle">Continue with Google</button>
+
+    <div style="text-align:center; color:var(--ink-soft); font-size:.85rem; margin-bottom:18px;" data-i18n="or">or</div>
+
+    <form class="card" id="signup-form" style="max-width:100%;">
+      <div class="field"><label data-i18n="fullName">Full name</label><input type="text" id="name" required></div>
+      <div class="field"><label data-i18n="className">Class</label><input type="text" id="cls" required></div>
+      <div class="field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone" required></div>
+      <div class="field"><label data-i18n="email">Email</label><input type="email" id="email" required></div>
+      <div class="field"><label data-i18n="password">Password</label><input type="password" id="password" required minlength="6"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="submit-btn" data-i18n="createAccount">Create account</button>
+    </form>
+
+    <p class="hint" style="margin-top:16px;">
+      <span data-i18n="alreadyHaveAccount">Already have an account?</span>
+      <a href="student-login.html" data-i18n="logIn">Log in</a>
+    </p>
+  </div>
+</main>
+
+<script type="module">
+  import { applyI18n } from "./js/i18n.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
+  import { signUpWithEmail, signUpWithGoogle } from "./js/student-auth.js";
+
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+
+  const err = document.getElementById("err");
+
+  document.getElementById("google-btn").addEventListener("click", async () => {
+    err.classList.remove("show");
+    try {
+      await signUpWithGoogle();
+      location.href = "profile.html";
+    } catch (e) {
+      err.textContent = e.message;
+      err.classList.add("show");
+    }
+  });
+
+  document.getElementById("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    err.classList.remove("show");
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    try {
+      await signUpWithEmail({
+        name: document.getElementById("name").value.trim(),
+        cls: document.getElementById("cls").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+      });
+      location.href = "profile.html";
+    } catch (e2) {
+      err.textContent = e2.message;
+      err.classList.add("show");
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
