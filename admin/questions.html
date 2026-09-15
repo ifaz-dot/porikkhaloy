@@ -11,54 +11,257 @@
 <div class="admin-shell">
   <nav class="admin-nav" id="admin-nav"></nav>
   <div class="admin-main">
+
+    <!-- Subjects -->
     <div class="toolbar">
       <div>
-        <h1>প্রশ্ন ব্যাংক</h1>
-        <p class="hint">বিষয় ও পরীক্ষা অনুযায়ী প্রশ্ন দেখো ও পরিচালনা করো।</p>
+        <h1>বিষয় পরিচালনা</h1>
+        <p class="hint">বিষয় যোগ করো বা মুছে ফেলো। বিষয় মুছলে তার সব পরীক্ষা ও প্রশ্নও মুছে যাবে।</p>
       </div>
-      <button class="btn btn-primary" id="add-btn">+ নতুন প্রশ্ন যোগ করো</button>
+      <button class="btn btn-primary" id="new-subject-btn">+ নতুন বিষয়</button>
+    </div>
+
+    <div class="card" id="subject-form-card" style="display:none; max-width:100%; margin-bottom:24px;">
+      <div class="field"><label>বিষয়ের নাম (বাংলা)</label><input type="text" id="s-name-bn" placeholder="যেমন: ফাইন্যান্স"></div>
+      <div class="field"><label>বিষয়ের নাম (English)</label><input type="text" id="s-name-en" placeholder="e.g. Finance"></div>
+      <div class="field"><label>সংক্ষিপ্ত বিবরণ</label><input type="text" id="s-desc" placeholder="এক লাইনে বিবরণ"></div>
+      <button class="btn btn-primary" id="save-subject-btn">সংরক্ষণ করো</button>
+      <button class="btn btn-outline" id="cancel-subject-btn" type="button">বাতিল</button>
+    </div>
+
+    <table style="margin-bottom:40px;">
+      <thead><tr><th>বিষয়</th><th>English</th><th style="width:90px;">পরীক্ষা</th><th style="width:80px;"></th></tr></thead>
+      <tbody id="subjects-body"></tbody>
+    </table>
+
+    <!-- Quizzes & Questions -->
+    <div class="toolbar">
+      <div>
+        <h1 style="font-size:1.3rem;">প্রশ্ন ব্যাংক</h1>
+        <p class="hint">একটি বিষয় বেছে নিয়ে তার পরীক্ষা ও প্রশ্ন পরিচালনা করো।</p>
+      </div>
+      <select id="subject-select" style="padding:9px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); background:#fff; font-family:var(--bangla);"></select>
     </div>
 
     <div id="quiz-groups"></div>
+
   </div>
 </div>
 
-<script src="../js/data.js"></script>
+<!-- Add question modal-ish inline panel -->
+<div class="overlay" id="q-overlay">
+  <div class="overlay-box" style="max-width:560px; text-align:left; border-top-color:var(--indigo);">
+    <h2 style="color:var(--indigo);" id="q-form-title">নতুন প্রশ্ন যোগ করো</h2>
+    <div class="field"><label>প্রশ্ন</label><input type="text" id="q-text"></div>
+    <div class="field"><label>অপশন ক</label><input type="text" id="q-opt0"></div>
+    <div class="field"><label>অপশন খ</label><input type="text" id="q-opt1"></div>
+    <div class="field"><label>অপশন গ</label><input type="text" id="q-opt2"></div>
+    <div class="field"><label>অপশন ঘ</label><input type="text" id="q-opt3"></div>
+    <div class="field">
+      <label>সঠিক উত্তর</label>
+      <select id="q-correct" style="width:100%; padding:11px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); font-family:var(--bangla);">
+        <option value="0">ক</option><option value="1">খ</option><option value="2">গ</option><option value="3">ঘ</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btn btn-primary" id="q-save-btn">সংরক্ষণ করো</button>
+      <button class="btn btn-outline" id="q-cancel-btn" type="button">বাতিল</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
+  import {
+    getSubjects, addSubject, deleteSubject,
+    getQuizzesBySubject, addQuiz, deleteQuiz,
+    addQuestionToQuiz, addQuestionsToQuiz, parseQuestionCSV
+  } from "../js/data.js";
+
   renderAdminNav("questions.html");
-</script>
-<script>
-  const container = document.getElementById("quiz-groups");
-  QUIZZES.forEach(quiz => {
-    const subject = getSubjects().find(s => s.id === quiz.subjectId);
-    const wrap = document.createElement("div");
-    wrap.style.marginBottom = "32px";
-    wrap.innerHTML = `
-      <h2 style="font-size:1.1rem; border-bottom:1px solid var(--rule); padding-bottom:10px;">
-        ${quiz.title_bn} <span class="hint">— ${subject.name_bn}</span>
-      </h2>
-      <table>
-        <thead><tr><th style="width:44px;">#</th><th>প্রশ্ন</th><th style="width:140px;">সঠিক উত্তর</th></tr></thead>
-        <tbody>
-          ${quiz.questions.map((q, i) => `
-            <tr>
-              <td>${i + 1}</td>
-              <td>${q.text_bn}</td>
-              <td>${["ক","খ","গ","ঘ","ঙ"][q.correctIndex]}. ${q.options_bn[q.correctIndex]}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    `;
-    container.appendChild(wrap);
+
+  let subjects = [];
+  let activeSubjectId = null;
+
+  /* ---------------- subjects table ---------------- */
+  async function loadSubjects() {
+    subjects = await getSubjects();
+    const body = document.getElementById("subjects-body");
+    body.innerHTML = "";
+    if (subjects.length === 0) {
+      body.innerHTML = `<tr><td colspan="4" class="hint">এখনও কোনো বিষয় যোগ করা হয়নি।</td></tr>`;
+    }
+    for (const s of subjects) {
+      const quizzes = await getQuizzesBySubject(s.id);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.name_bn}</td>
+        <td class="hint">${s.name_en || ""}</td>
+        <td>${quizzes.length}</td>
+        <td><button class="btn btn-outline" data-del-subject="${s.id}" style="padding:6px 12px; font-size:.78rem;">মুছো</button></td>
+      `;
+      body.appendChild(tr);
+    }
+    body.querySelectorAll("[data-del-subject]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("এই বিষয় ও এর সব পরীক্ষা/প্রশ্ন মুছে ফেলা হবে। নিশ্চিত?")) return;
+        await deleteSubject(btn.dataset.delSubject);
+        await loadSubjects();
+        await populateSubjectSelect();
+      });
+    });
+  }
+
+  document.getElementById("new-subject-btn").addEventListener("click", () => {
+    document.getElementById("subject-form-card").style.display = "block";
+  });
+  document.getElementById("cancel-subject-btn").addEventListener("click", () => {
+    document.getElementById("subject-form-card").style.display = "none";
+  });
+  document.getElementById("save-subject-btn").addEventListener("click", async () => {
+    const name_bn = document.getElementById("s-name-bn").value.trim();
+    const name_en = document.getElementById("s-name-en").value.trim();
+    const desc_bn = document.getElementById("s-desc").value.trim();
+    if (!name_bn) { alert("বিষয়ের বাংলা নাম আবশ্যক।"); return; }
+    await addSubject({ name_bn, name_en, desc_bn });
+    document.getElementById("s-name-bn").value = "";
+    document.getElementById("s-name-en").value = "";
+    document.getElementById("s-desc").value = "";
+    document.getElementById("subject-form-card").style.display = "none";
+    await loadSubjects();
+    await populateSubjectSelect();
   });
 
-  document.getElementById("add-btn").addEventListener("click", () => {
-    // Real backend: opens a form that writes a new doc to
-    // /questions in Firestore. Wired up once the backend is connected.
-    alert("ব্যাকএন্ড যুক্ত হলে এখানে নতুন প্রশ্ন যোগ করার ফর্ম খুলবে।");
+  /* ---------------- subject selector + quiz/question area ---------------- */
+  async function populateSubjectSelect() {
+    const select = document.getElementById("subject-select");
+    select.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name_bn}</option>`).join("");
+    if (subjects.length > 0) {
+      activeSubjectId = subjects.some(s => s.id === activeSubjectId) ? activeSubjectId : subjects[0].id;
+      select.value = activeSubjectId;
+      await renderQuizArea();
+    } else {
+      document.getElementById("quiz-groups").innerHTML = `<p class="hint">প্রথমে একটি বিষয় যোগ করো।</p>`;
+    }
+  }
+  document.getElementById("subject-select").addEventListener("change", async (e) => {
+    activeSubjectId = e.target.value;
+    await renderQuizArea();
   });
+
+  let currentQuizIdForAdd = null;
+
+  async function renderQuizArea() {
+    const container = document.getElementById("quiz-groups");
+    container.innerHTML = `<p class="hint">লোড হচ্ছে…</p>`;
+    const quizzes = await getQuizzesBySubject(activeSubjectId);
+    container.innerHTML = "";
+
+    quizzes.forEach(quiz => {
+      const wrap = document.createElement("div");
+      wrap.style.marginBottom = "32px";
+      wrap.innerHTML = `
+        <div class="toolbar" style="margin-bottom:14px;">
+          <h2 style="font-size:1.05rem; margin:0;">${quiz.title_bn}</h2>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" data-add-q="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">+ প্রশ্ন যোগ করো</button>
+            <label class="btn btn-outline" style="padding:8px 14px; font-size:.85rem; cursor:pointer;">
+              CSV ইমপোর্ট
+              <input type="file" accept=".csv,text/csv" data-import-q="${quiz.id}" style="display:none;">
+            </label>
+            <button class="btn btn-outline" data-del-quiz="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">পরীক্ষা মুছো</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th style="width:44px;">#</th><th>প্রশ্ন</th><th style="width:140px;">সঠিক উত্তর</th></tr></thead>
+          <tbody>
+            ${(quiz.questions || []).length === 0
+              ? `<tr><td colspan="3" class="hint">এখনও কোনো প্রশ্ন নেই।</td></tr>`
+              : quiz.questions.map((q, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${q.text_bn}</td>
+                  <td>${["ক","খ","গ","ঘ"][q.correctIndex]}. ${q.options_bn[q.correctIndex]}</td>
+                </tr>
+              `).join("")}
+          </tbody>
+        </table>
+      `;
+      container.appendChild(wrap);
+    });
+
+    container.querySelectorAll("[data-add-q]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentQuizIdForAdd = btn.dataset.addQ;
+        openQuestionForm();
+      });
+    });
+    container.querySelectorAll("[data-del-quiz]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("এই পরীক্ষা ও এর সব প্রশ্ন মুছে ফেলা হবে। নিশ্চিত?")) return;
+        await deleteQuiz(btn.dataset.delQuiz);
+        await renderQuizArea();
+        await loadSubjects();
+      });
+    });
+    container.querySelectorAll("[data-import-q]").forEach(input => {
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const parsed = parseQuestionCSV(text);
+        if (parsed.length === 0) {
+          alert("CSV থেকে কোনো বৈধ প্রশ্ন পাওয়া যায়নি। ফরম্যাট: প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স");
+          return;
+        }
+        await addQuestionsToQuiz(input.dataset.importQ, parsed);
+        alert(`${parsed.length}টি প্রশ্ন যোগ করা হয়েছে।`);
+        await renderQuizArea();
+      });
+    });
+
+    // "add quiz" row at the bottom
+    const addQuizWrap = document.createElement("div");
+    addQuizWrap.className = "card";
+    addQuizWrap.style.maxWidth = "480px";
+    addQuizWrap.innerHTML = `
+      <h3 style="font-size:1rem;">এই বিষয়ে নতুন পরীক্ষা যোগ করো</h3>
+      <div class="field"><label>পরীক্ষার শিরোনাম</label><input type="text" id="new-quiz-title" placeholder="যেমন: মডেল টেস্ট ২"></div>
+      <div class="field"><label>সময়সীমা (মিনিট)</label><input type="number" id="new-quiz-duration" value="10" min="1"></div>
+      <button class="btn btn-mustard" id="new-quiz-btn">পরীক্ষা তৈরি করো</button>
+    `;
+    container.appendChild(addQuizWrap);
+    document.getElementById("new-quiz-btn").addEventListener("click", async () => {
+      const title_bn = document.getElementById("new-quiz-title").value.trim();
+      const minutes = parseInt(document.getElementById("new-quiz-duration").value, 10) || 10;
+      if (!title_bn) { alert("পরীক্ষার শিরোনাম আবশ্যক।"); return; }
+      await addQuiz({ subjectId: activeSubjectId, title_bn, type: "exam", durationSeconds: minutes * 60 });
+      await renderQuizArea();
+      await loadSubjects();
+    });
+  }
+
+  /* ---------------- add-question overlay ---------------- */
+  const qOverlay = document.getElementById("q-overlay");
+  function openQuestionForm() {
+    ["q-text","q-opt0","q-opt1","q-opt2","q-opt3"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("q-correct").value = "0";
+    qOverlay.classList.add("show");
+  }
+  document.getElementById("q-cancel-btn").addEventListener("click", () => qOverlay.classList.remove("show"));
+  document.getElementById("q-save-btn").addEventListener("click", async () => {
+    const text_bn = document.getElementById("q-text").value.trim();
+    const options_bn = [0,1,2,3].map(i => document.getElementById(`q-opt${i}`).value.trim());
+    const correctIndex = parseInt(document.getElementById("q-correct").value, 10);
+    if (!text_bn || options_bn.some(o => !o)) { alert("সব ঘর পূরণ করো।"); return; }
+    await addQuestionToQuiz(currentQuizIdForAdd, { text_bn, options_bn, correctIndex });
+    qOverlay.classList.remove("show");
+    await renderQuizArea();
+  });
+
+  /* ---------------- init ---------------- */
+  await loadSubjects();
+  await populateSubjectSelect();
 </script>
 </body>
 </html>
