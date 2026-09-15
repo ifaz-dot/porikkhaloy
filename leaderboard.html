@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>লিডারবোর্ড — পরীক্ষালয়</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+  </div>
+</header>
+
+<main>
+  <div class="shell" style="max-width:720px;">
+    <section class="block">
+      <h2 id="quiz-title">লিডারবোর্ড</h2>
+      <p class="hint" style="margin-bottom:24px;">স্কোর অনুযায়ী র‍্যাঙ্ক করা হয়েছে। সমান স্কোরে যে দ্রুত জমা দিয়েছে সে এগিয়ে থাকবে।</p>
+
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস</th><th>স্কোর</th><th>সময়</th></tr></thead>
+          <tbody id="board-body"><tr><td colspan="5" class="hint">লোড হচ্ছে…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+  import { getQuiz, getLeaderboard } from "./js/data.js";
+
+  const quizId = new URLSearchParams(location.search).get("quiz");
+  const body = document.getElementById("board-body");
+
+  const quiz = await getQuiz(quizId);
+  document.getElementById("quiz-title").textContent = quiz ? `লিডারবোর্ড — ${quiz.title_bn}` : "লিডারবোর্ড";
+
+  const board = await getLeaderboard(quizId);
+  body.innerHTML = "";
+  if (board.length === 0) {
+    body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কেউ এই পরীক্ষা সম্পন্ন করেনি।</td></tr>`;
+  }
+  board.forEach((a, i) => {
+    const m = Math.floor(a.durationSeconds / 60);
+    const s = a.durationSeconds % 60;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
+      <td>${a.student?.name || "—"}</td>
+      <td class="hint">${a.student?.cls || "—"}</td>
+      <td>${a.score}/${a.total}</td>
+      <td class="hint">${m}ম ${s}সে</td>
+    `;
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>
