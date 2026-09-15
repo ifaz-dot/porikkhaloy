@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>পরীক্ষা চলছে — পরীক্ষালয়</title>
+<title>Exam in progress — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -27,9 +27,9 @@
     <ul class="options" id="options"></ul>
 
     <div class="q-nav">
-      <button class="btn btn-outline" id="prev-btn">← আগের প্রশ্ন</button>
-      <button class="btn btn-primary" id="next-btn">পরের প্রশ্ন →</button>
-      <button class="btn btn-mustard" id="submit-btn" style="display:none;">পরীক্ষা জমা দাও</button>
+      <button class="btn btn-outline" id="prev-btn" data-i18n="prevQuestion">← Previous</button>
+      <button class="btn btn-primary" id="next-btn" data-i18n="nextQuestion">Next →</button>
+      <button class="btn btn-mustard" id="submit-btn" style="display:none;" data-i18n="submitExam">Submit exam</button>
     </div>
   </div>
 </main>
@@ -37,21 +37,24 @@
 <!-- tab-switch / exit warning -->
 <div class="overlay" id="warning-overlay">
   <div class="overlay-box">
-    <h2>তুমি পরীক্ষা থেকে বের হয়ে গেছ!</h2>
-    <p>নির্ধারিত সময়ের মধ্যে এই ট্যাবে ফিরে না এলে পরীক্ষাটি স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে।</p>
+    <h2 data-i18n="tabWarningTitle">You left the exam!</h2>
+    <p data-i18n="tabWarningText">Return to this tab in time or the exam will be auto-submitted.</p>
     <div class="overlay-count" id="warning-count">10</div>
   </div>
 </div>
 
 <script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
   import { getQuiz, getAttempt, saveAttempt, finalizeAttempt } from "./js/data.js";
+
+  applyI18n();
 
   const attemptId = new URLSearchParams(location.search).get("attempt");
   const attempt = getAttempt(attemptId);
   const quiz = attempt ? await getQuiz(attempt.quizId) : null;
 
   if (!attempt || !quiz) {
-    document.body.innerHTML = `<main><div class="shell"><p>পরীক্ষা খুঁজে পাওয়া যায়নি। <a href="index.html">প্রথম পাতায় ফিরে যাও</a>.</p></div></main>`;
+    document.body.innerHTML = `<main><div class="shell"><p>${t("examNotFound")} <a href="index.html">${t("home")}</a></p></div></main>`;
     throw new Error("no attempt");
   }
 
@@ -74,14 +77,14 @@
 
   function renderQuestion() {
     const q = quiz.questions[current];
-    document.getElementById("q-index").textContent = `প্রশ্ন ${current + 1} / ${quiz.questions.length}`;
+    document.getElementById("q-index").textContent = `${current + 1} / ${quiz.questions.length}`;
     document.getElementById("q-text").textContent = q.text_bn;
     document.getElementById("progress-fill").style.width =
       `${Math.round(((current + 1) / quiz.questions.length) * 100)}%`;
 
     const optsEl = document.getElementById("options");
     optsEl.innerHTML = "";
-    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
+    const labels = localStorage.getItem("site_lang") === "bn" ? ["ক","খ","গ","ঘ","ঙ"] : ["A","B","C","D","E"];
     q.options_bn.forEach((opt, i) => {
       const li = document.createElement("li");
       li.className = "option" + (attempt.answers[q.id] === i ? " selected" : "");
