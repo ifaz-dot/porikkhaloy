@@ -33,10 +33,11 @@
 </div>
 
 <script src="../js/data.js"></script>
-<script src="../js/admin-nav.js"></script>
-<script>
+<script type="module">
+  import { renderAdminNav } from "../js/admin-nav.js";
   renderAdminNav("dashboard.html");
-
+</script>
+<script>
   document.getElementById("stat-subjects").textContent = getSubjects().length;
   document.getElementById("stat-quizzes").textContent = QUIZZES.length;
   document.getElementById("stat-questions").textContent =
