@@ -29,6 +29,7 @@
 
       <div class="actions">
         <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
+        <a href="#" id="leaderboard-link" class="btn btn-mustard">লিডারবোর্ড দেখো</a>
       </div>
     </section>
   </div>
@@ -47,6 +48,7 @@
     document.getElementById("quiz-title").textContent = quiz.title_bn;
     document.getElementById("score").textContent = attempt.score;
     document.getElementById("of").textContent = `/ ${attempt.total} সঠিক — ${attempt.student.name}`;
+    document.getElementById("leaderboard-link").href = `leaderboard.html?quiz=${attempt.quizId}`;
 
     const statusLine = document.getElementById("status-line");
     if (attempt.status === "ended-early") {
