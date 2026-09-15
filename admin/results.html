@@ -20,7 +20,7 @@
 
     <table>
       <thead>
-        <tr><th>নাম</th><th>ক্লাস / রোল</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>সময়</th></tr>
+        <tr><th>নাম</th><th>ক্লাস / ফোন</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>সময়</th></tr>
       </thead>
       <tbody id="results-body"></tbody>
     </table>
@@ -47,7 +47,7 @@
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${a.student?.name || "—"}</td>
-      <td>${a.student?.cls || "—"} / ${a.student?.roll || "—"}</td>
+      <td>${a.student?.cls || "—"} / ${a.student?.phone || a.student?.roll || "—"}</td>
       <td>${quiz ? quiz.title_bn : a.quizId}</td>
       <td>${a.score !== undefined ? `${a.score}/${a.total}` : "চলমান"}</td>
       <td>${a.status === "ended-early"
