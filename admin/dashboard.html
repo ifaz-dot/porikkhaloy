@@ -34,33 +34,29 @@
 
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
-  import { getSubjects, getAllQuizzes, getQuiz } from "../js/data.js";
+  import { getSubjects, getAllQuizzes, getAllAttempts, getQuiz } from "../js/data.js";
 
   renderAdminNav("dashboard.html");
 
   const subjects = await getSubjects();
   const quizzes = await getAllQuizzes();
+  const attempts = await getAllAttempts();
 
   document.getElementById("stat-subjects").textContent = subjects.length;
   document.getElementById("stat-quizzes").textContent = quizzes.length;
   document.getElementById("stat-questions").textContent =
     quizzes.reduce((sum, q) => sum + (q.questions || []).length, 0);
-
-  // Real backend: this scans Firestore's /attempts collection.
-  // Demo mode reads whatever is sitting in this browser's localStorage.
-  const attempts = Object.keys(localStorage)
-    .filter(k => k.startsWith("attempt_a_"))
-    .map(k => JSON.parse(localStorage.getItem(k)))
-    .sort((a, b) => b.startedAt - a.startedAt);
-
   document.getElementById("stat-attempts").textContent = attempts.length;
+
+  // quick lookup so we don't refetch the same quiz repeatedly
+  const quizById = Object.fromEntries(quizzes.map(q => [q.id, q]));
 
   const body = document.getElementById("recent-body");
   if (attempts.length === 0) {
     body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
   }
   for (const a of attempts.slice(0, 8)) {
-    const quiz = await getQuiz(a.quizId);
+    const quiz = quizById[a.quizId] || await getQuiz(a.quizId);
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${a.student?.name || "—"}</td>
