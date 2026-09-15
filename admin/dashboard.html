@@ -32,16 +32,19 @@
   </div>
 </div>
 
-<script src="../js/data.js"></script>
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
+  import { getSubjects, getAllQuizzes, getQuiz } from "../js/data.js";
+
   renderAdminNav("dashboard.html");
-</script>
-<script>
-  document.getElementById("stat-subjects").textContent = getSubjects().length;
-  document.getElementById("stat-quizzes").textContent = QUIZZES.length;
+
+  const subjects = await getSubjects();
+  const quizzes = await getAllQuizzes();
+
+  document.getElementById("stat-subjects").textContent = subjects.length;
+  document.getElementById("stat-quizzes").textContent = quizzes.length;
   document.getElementById("stat-questions").textContent =
-    QUIZZES.reduce((sum, q) => sum + q.questions.length, 0);
+    quizzes.reduce((sum, q) => sum + (q.questions || []).length, 0);
 
   // Real backend: this scans Firestore's /attempts collection.
   // Demo mode reads whatever is sitting in this browser's localStorage.
@@ -56,8 +59,8 @@
   if (attempts.length === 0) {
     body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
   }
-  attempts.slice(0, 8).forEach(a => {
-    const quiz = getQuiz(a.quizId);
+  for (const a of attempts.slice(0, 8)) {
+    const quiz = await getQuiz(a.quizId);
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${a.student?.name || "—"}</td>
@@ -71,7 +74,7 @@
           : '<span class="hint">চলমান</span>'}</td>
     `;
     body.appendChild(tr);
-  });
+  }
 </script>
 </body>
 </html>
