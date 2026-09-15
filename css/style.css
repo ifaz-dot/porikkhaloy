@@ -289,10 +289,58 @@ tr:hover td{background:#fbfaf6;}
 
 .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;}
 
+/* ---------- responsive: tablet (≤1024px) ---------- */
+@media (max-width:1024px){
+  .admin-shell{grid-template-columns:190px 1fr;}
+  .admin-main{padding:28px 24px;}
+  .hero h1{font-size:2.2rem;}
+  .subjects{grid-template-columns:repeat(auto-fill, minmax(180px,1fr));}
+}
+
+/* ---------- responsive: small tablet / large phone (≤760px) ---------- */
 @media (max-width:760px){
+  .shell{padding:0 18px;}
   .admin-shell{grid-template-columns:1fr;}
-  .admin-nav{display:flex; overflow-x:auto; padding:14px 16px;}
+  .admin-nav{display:flex; overflow-x:auto; padding:14px 16px; align-items:center; gap:2px;}
   .admin-nav .brand{display:none;}
-  .admin-nav a{white-space:nowrap; margin-right:4px;}
-  .hero h1{font-size:2rem;}
+  .admin-nav a{white-space:nowrap; margin-right:4px; margin-top:0 !important;}
+  .admin-main{padding:22px 18px;}
+  .hero h1{font-size:1.8rem;}
+  .hero h1 .bn{font-size:1.5rem;}
+  .actions{flex-direction:column; align-items:stretch;}
+  .actions .btn{text-align:center;}
+  .score-block{flex-wrap:wrap;}
+  .score-block .big{font-size:2.6rem;}
+  .q-nav{flex-direction:column; align-items:stretch;}
+  .q-nav .btn{width:100%; text-align:center;}
+  .exam-bar .exam-meta{font-size:.78rem;}
+  .timer{font-size:1.15rem; padding:3px 12px;}
+  .stat-row{grid-template-columns:repeat(2, 1fr);}
+  table{font-size:.82rem;}
+  th, td{padding:9px 10px;}
+  .card{padding:22px;}
+}
+
+/* ---------- responsive: phone (≤480px) ---------- */
+@media (max-width:480px){
+  .brand small{display:none;}
+  .site-header .shell{flex-wrap:wrap; gap:6px;}
+  .hero h1{font-size:1.5rem;}
+  .hero h1 .bn{font-size:1.25rem;}
+  .hero p{font-size:.95rem;}
+  .subjects{grid-template-columns:1fr;}
+  .q-text{font-size:1.05rem;}
+  .option{padding:12px 14px;}
+  .stat-row{grid-template-columns:1fr 1fr;}
+  .stat{padding:14px;}
+  .stat .n{font-size:1.5rem;}
+  .overlay-box{padding:24px 20px;}
+  .toolbar{flex-direction:column; align-items:stretch;}
+  .toolbar select{width:100%;}
+}
+
+/* ---------- tables that can't shrink: let them scroll horizontally instead of breaking layout ---------- */
+@media (max-width:640px){
+  table{display:block; overflow-x:auto; white-space:nowrap;}
+  thead, tbody, tr{display:table; width:100%; table-layout:fixed;}
 }
