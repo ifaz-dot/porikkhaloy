@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>অ্যাডমিন লগইন — পরীক্ষালয়</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="admin">
+
+<main style="padding-top:80px;">
+  <div class="shell" style="max-width:420px;">
+    <div class="kicker" style="color:var(--mustard); font-weight:600; margin-bottom:8px;">পরীক্ষালয়</div>
+    <h1 style="font-size:1.6rem;">অ্যাডমিন প্যানেল</h1>
+    <p class="hint" style="margin-bottom:24px;">শুধুমাত্র অনুমোদিত অ্যাডমিনরা এখানে প্রবেশ করতে পারবেন।</p>
+
+    <div class="error-box" id="err">ভুল ইমেইল বা পাসওয়ার্ড।</div>
+
+    <form class="card" id="login-form" style="max-width:100%;">
+      <div class="field">
+        <label for="email">ইমেইল</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="field">
+        <label for="pass">পাসওয়ার্ড</label>
+        <input type="password" id="pass" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">লগইন করো</button>
+      <p class="hint" style="margin-top:14px;">
+        ডেমো মোড — এই মুহূর্তে যেকোনো ইমেইল/পাসওয়ার্ড দিয়ে ঢোকা যাবে। আসল ব্যাকএন্ড যুক্ত হলে
+        Firebase Auth + Firestore-এর <code>role: "admin"</code> চেক এখানে বসবে।
+      </p>
+    </form>
+  </div>
+</main>
+
+<script>
+  document.getElementById("login-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    // Real backend: Firebase Auth sign-in, then verify a Firestore
+    // `admins/{uid}` doc exists before granting access.
+    sessionStorage.setItem("admin_session", "demo");
+    location.href = "dashboard.html";
+  });
+</script>
+</body>
+</html>

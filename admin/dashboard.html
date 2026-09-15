@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ড্যাশবোর্ড — অ্যাডমিন</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="admin">
+
+<div class="admin-shell">
+  <nav class="admin-nav" id="admin-nav"></nav>
+  <div class="admin-main">
+    <h1>ড্যাশবোর্ড</h1>
+    <p class="hint">সামগ্রিক অবস্থার সংক্ষিপ্ত চিত্র।</p>
+
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="stat-subjects">–</div><div class="l">মোট বিষয়</div></div>
+      <div class="stat"><div class="n" id="stat-quizzes">–</div><div class="l">মোট পরীক্ষা</div></div>
+      <div class="stat"><div class="n" id="stat-questions">–</div><div class="l">মোট প্রশ্ন</div></div>
+      <div class="stat"><div class="n" id="stat-attempts">–</div><div class="l">মোট অংশগ্রহণ</div></div>
+    </div>
+
+    <div class="toolbar">
+      <h2 style="font-size:1.2rem; border:none; margin:0;">সাম্প্রতিক অংশগ্রহণ</h2>
+      <a href="results.html" class="btn btn-outline" style="padding:8px 16px; font-size:.85rem;">সব দেখো →</a>
+    </div>
+    <table>
+      <thead><tr><th>নাম</th><th>ক্লাস</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th></tr></thead>
+      <tbody id="recent-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/admin-nav.js"></script>
+<script>
+  renderAdminNav("dashboard.html");
+
+  document.getElementById("stat-subjects").textContent = getSubjects().length;
+  document.getElementById("stat-quizzes").textContent = QUIZZES.length;
+  document.getElementById("stat-questions").textContent =
+    QUIZZES.reduce((sum, q) => sum + q.questions.length, 0);
+
+  // Real backend: this scans Firestore's /attempts collection.
+  // Demo mode reads whatever is sitting in this browser's localStorage.
+  const attempts = Object.keys(localStorage)
+    .filter(k => k.startsWith("attempt_a_"))
+    .map(k => JSON.parse(localStorage.getItem(k)))
+    .sort((a, b) => b.startedAt - a.startedAt);
+
+  document.getElementById("stat-attempts").textContent = attempts.length;
+
+  const body = document.getElementById("recent-body");
+  if (attempts.length === 0) {
+    body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
+  }
+  attempts.slice(0, 8).forEach(a => {
+    const quiz = getQuiz(a.quizId);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${a.student?.name || "—"}</td>
+      <td>${a.student?.cls || "—"}</td>
+      <td>${quiz ? quiz.title_bn : a.quizId}</td>
+      <td>${a.score !== undefined ? `${a.score}/${a.total}` : "চলমান"}</td>
+      <td>${a.status === "ended-early"
+        ? '<span class="pill warn">সময়ের আগে বন্ধ</span>'
+        : a.status === "completed"
+          ? '<span class="pill ok">সম্পন্ন</span>'
+          : '<span class="hint">চলমান</span>'}</td>
+    `;
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>

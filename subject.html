@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>বিষয়ের কুইজ তালিকা — পরীক্ষালয়</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+    <nav><a href="index.html" class="hint">← বিষয় তালিকায় ফিরে যাও</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell">
+    <section class="hero" style="padding-bottom:24px; margin-bottom:32px;">
+      <div class="kicker" id="subject-kicker">বিষয়</div>
+      <h1 id="subject-title" style="font-size:2rem;"></h1>
+    </section>
+
+    <section class="block">
+      <h2>উপলব্ধ পরীক্ষাসমূহ</h2>
+      <div id="quiz-list"></div>
+    </section>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const subjectId = params.get("id");
+  const subject = getSubjects().find(s => s.id === subjectId);
+  const list = document.getElementById("quiz-list");
+
+  if (!subject) {
+    document.getElementById("subject-title").textContent = "বিষয় খুঁজে পাওয়া যায়নি";
+  } else {
+    document.getElementById("subject-kicker").textContent = subject.name_en;
+    document.getElementById("subject-title").textContent = subject.name_bn;
+
+    const quizzes = getQuizzesBySubject(subjectId);
+    if (quizzes.length === 0) {
+      list.innerHTML = `<p class="hint">এই বিষয়ে এখনও কোনো পরীক্ষা যোগ করা হয়নি।</p>`;
+    }
+    quizzes.forEach(q => {
+      const already = hasAttempted(q.id);
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.marginBottom = "16px";
+      card.style.maxWidth = "100%";
+      card.innerHTML = `
+        <h3 style="font-size:1.1rem;">${q.title_bn}</h3>
+        <p class="hint">সময়সীমা: ${Math.floor(q.durationSeconds / 60)} মিনিট · প্রশ্ন সংখ্যা: ${q.questions.length}</p>
+        ${already
+          ? `<span class="status-tag ended-early">ইতিমধ্যে অংশ নেওয়া হয়েছে</span>`
+          : `<a class="btn btn-mustard" href="start.html?quiz=${q.id}">পরীক্ষা শুরু করো</a>`}
+      `;
+      list.appendChild(card);
+    });
+  }
+</script>
+</body>
+</html>

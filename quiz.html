@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>পরীক্ষা চলছে — পরীক্ষালয়</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="exam-bar">
+  <div class="shell">
+    <div class="exam-meta" id="quiz-title-bar">লোড হচ্ছে…</div>
+    <div class="timer" id="timer">--:--</div>
+  </div>
+  <div class="shell">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+</div>
+
+<main>
+  <div class="shell" style="max-width:720px;">
+    <div class="q-jump" id="q-jump"></div>
+
+    <div class="q-index" id="q-index"></div>
+    <div class="q-text" id="q-text"></div>
+    <ul class="options" id="options"></ul>
+
+    <div class="q-nav">
+      <button class="btn btn-outline" id="prev-btn">← আগের প্রশ্ন</button>
+      <button class="btn btn-primary" id="next-btn">পরের প্রশ্ন →</button>
+      <button class="btn btn-mustard" id="submit-btn" style="display:none;">পরীক্ষা জমা দাও</button>
+    </div>
+  </div>
+</main>
+
+<!-- tab-switch / exit warning -->
+<div class="overlay" id="warning-overlay">
+  <div class="overlay-box">
+    <h2>তুমি পরীক্ষা থেকে বের হয়ে গেছ!</h2>
+    <p>নির্ধারিত সময়ের মধ্যে এই ট্যাবে ফিরে না এলে পরীক্ষাটি স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে।</p>
+    <div class="overlay-count" id="warning-count">10</div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+  const attemptId = new URLSearchParams(location.search).get("attempt");
+  let attempt = getAttempt(attemptId);
+  const quiz = attempt ? getQuiz(attempt.quizId) : null;
+
+  if (!attempt || !quiz) {
+    document.body.innerHTML = `<main><div class="shell"><p>পরীক্ষা খুঁজে পাওয়া যায়নি। <a href="index.html">প্রথম পাতায় ফিরে যাও</a>.</p></div></main>`;
+    throw new Error("no attempt");
+  }
+
+  document.getElementById("quiz-title-bar").textContent = quiz.title_bn;
+
+  let current = 0;
+  const jumpEl = document.getElementById("q-jump");
+
+  function renderJump() {
+    jumpEl.innerHTML = "";
+    quiz.questions.forEach((q, i) => {
+      const b = document.createElement("button");
+      b.textContent = i + 1;
+      if (attempt.answers[q.id] !== undefined) b.classList.add("answered");
+      if (i === current) b.classList.add("current");
+      b.addEventListener("click", () => { current = i; renderQuestion(); });
+      jumpEl.appendChild(b);
+    });
+  }
+
+  function renderQuestion() {
+    const q = quiz.questions[current];
+    document.getElementById("q-index").textContent = `প্রশ্ন ${current + 1} / ${quiz.questions.length}`;
+    document.getElementById("q-text").textContent = q.text_bn;
+    document.getElementById("progress-fill").style.width =
+      `${Math.round(((current + 1) / quiz.questions.length) * 100)}%`;
+
+    const optsEl = document.getElementById("options");
+    optsEl.innerHTML = "";
+    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
+    q.options_bn.forEach((opt, i) => {
+      const li = document.createElement("li");
+      li.className = "option" + (attempt.answers[q.id] === i ? " selected" : "");
+      li.innerHTML = `<span class="label">${labels[i]}.</span><span>${opt}</span>`;
+      li.addEventListener("click", () => {
+        attempt.answers[q.id] = i;
+        saveAttempt(attempt);
+        renderQuestion();
+        renderJump();
+      });
+      optsEl.appendChild(li);
+    });
+
+    document.getElementById("prev-btn").disabled = current === 0;
+    const isLast = current === quiz.questions.length - 1;
+    document.getElementById("next-btn").style.display = isLast ? "none" : "inline-block";
+    document.getElementById("submit-btn").style.display = isLast ? "inline-block" : "none";
+    renderJump();
+  }
+
+  document.getElementById("prev-btn").addEventListener("click", () => { if (current > 0) { current--; renderQuestion(); } });
+  document.getElementById("next-btn").addEventListener("click", () => { if (current < quiz.questions.length - 1) { current++; renderQuestion(); } });
+  document.getElementById("submit-btn").addEventListener("click", () => submitExam("completed"));
+
+  renderQuestion();
+
+  /* ---------------- timer ---------------- */
+  const timerEl = document.getElementById("timer");
+  function tick() {
+    const elapsed = Math.floor((Date.now() - attempt.startedAt) / 1000);
+    const remaining = Math.max(0, quiz.durationSeconds - elapsed);
+    const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+    const s = String(remaining % 60).padStart(2, "0");
+    timerEl.textContent = `${m}:${s}`;
+    timerEl.classList.toggle("low", remaining <= 60);
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      submitExam("completed");
+    }
+  }
+  const timerInterval = setInterval(tick, 1000);
+  tick();
+
+  /* ---------------- submit ---------------- */
+  let submitted = false;
+  function submitExam(status) {
+    if (submitted) return;
+    submitted = true;
+    clearInterval(timerInterval);
+    clearTimeout(warningTimeout);
+    // Real backend: this call goes through the Worker, which re-checks
+    // elapsed time server-side before accepting the submission.
+    finalizeAttempt(attemptId, status);
+    location.href = `result.html?attempt=${attemptId}`;
+  }
+
+  /* ---------------- tab-switch / exit guard ---------------- */
+  const GRACE_SECONDS = 10;
+  const overlay = document.getElementById("warning-overlay");
+  const countEl = document.getElementById("warning-count");
+  let warningTimeout = null;
+  let countdownInterval = null;
+
+  function startWarning() {
+    if (submitted) return;
+    overlay.classList.add("show");
+    let remaining = GRACE_SECONDS;
+    countEl.textContent = remaining;
+    countdownInterval = setInterval(() => {
+      remaining--;
+      countEl.textContent = remaining;
+      if (remaining <= 0) clearInterval(countdownInterval);
+    }, 1000);
+    warningTimeout = setTimeout(() => {
+      submitExam("ended-early");
+    }, GRACE_SECONDS * 1000);
+  }
+
+  function cancelWarning() {
+    overlay.classList.remove("show");
+    clearTimeout(warningTimeout);
+    clearInterval(countdownInterval);
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      startWarning();
+    } else {
+      cancelWarning();
+    }
+  });
+
+  window.addEventListener("blur", () => { if (document.hidden) startWarning(); });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (!submitted) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
+  // Real backend: pagehide should also fire navigator.sendBeacon() to a
+  // force-end endpoint, since beforeunload can't reliably run async saves.
+  window.addEventListener("pagehide", () => {
+    if (!submitted) {
+      attempt.status = "ended-early";
+      saveAttempt(attempt);
+    }
+  });
+</script>
+</body>
+</html>

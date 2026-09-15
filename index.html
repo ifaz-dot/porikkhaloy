@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>পরীক্ষালয় — অনলাইন কুইজ ও পরীক্ষা</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+    <nav><a href="admin/login.html" class="hint">অ্যাডমিন লগইন</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell">
+    <section class="hero">
+      <div class="kicker">বিনামূল্যে · নিবন্ধন ছাড়াই · বাংলা ভাষায়</div>
+      <h1>নিজের প্রস্তুতি যাচাই করো<span class="bn">এক ক্লিকেই পরীক্ষা দাও</span></h1>
+      <p>বিষয়ভিত্তিক কুইজ ও মডেল টেস্ট দিয়ে নিজের প্রস্তুতি যাচাই করো। সাইন আপ লাগবে না — নাম আর ক্লাস লিখে সরাসরি শুরু করতে পারবে।</p>
+      <div class="actions">
+        <a href="#subjects" class="btn btn-primary">পরীক্ষা শুরু করো</a>
+        <a href="admin/login.html" class="btn btn-outline">প্রশ্ন যোগ করবো (অ্যাডমিন)</a>
+      </div>
+    </section>
+
+    <section class="block" id="subjects">
+      <h2>বিষয় নির্বাচন করো</h2>
+      <div class="subjects" id="subject-grid"></div>
+    </section>
+
+    <section class="block">
+      <h2>পরীক্ষার নিয়ম</h2>
+      <p style="color:var(--ink-soft); max-width:60ch;">
+        প্রতিটি পরীক্ষায় একটি নির্দিষ্ট সময়সীমা থাকে, স্ক্রিনে কাউন্টডাউন দেখা যাবে।
+        পরীক্ষা চলাকালীন ট্যাব পরিবর্তন করলে বা অন্য অ্যাপে গেলে একটি সতর্কবার্তা দেখানো হবে —
+        নির্ধারিত সময়ের মধ্যে ফিরে না এলে পরীক্ষাটি স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে। প্রতিটি নেটওয়ার্ক
+        থেকে একবারই অংশগ্রহণ করা যাবে।
+      </p>
+    </section>
+  </div>
+</main>
+
+<div class="footer-note">
+  <div class="shell">পরীক্ষালয় — শিক্ষার্থীদের জন্য একটি বাংলা কুইজ ও পরীক্ষা প্ল্যাটফর্ম।</div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+  const grid = document.getElementById("subject-grid");
+  getSubjects().forEach((s, i) => {
+    const a = document.createElement("a");
+    a.href = `subject.html?id=${s.id}`;
+    a.className = "subject-card";
+    a.innerHTML = `
+      <div class="num">০${i + 1}</div>
+      <h3>${s.name_bn}</h3>
+      <p>${s.desc_bn}</p>
+    `;
+    grid.appendChild(a);
+  });
+</script>
+</body>
+</html>

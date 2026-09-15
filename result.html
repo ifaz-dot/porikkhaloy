@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ফলাফল — পরীক্ষালয়</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+  </div>
+</header>
+
+<main>
+  <div class="shell" style="max-width:720px;">
+    <section class="block">
+      <div id="status-line" class="hint" style="margin-bottom:10px;"></div>
+      <h2 id="quiz-title"></h2>
+
+      <div class="score-block">
+        <div class="big" id="score">–</div>
+        <div class="of" id="of"></div>
+      </div>
+
+      <div id="review"></div>
+
+      <div class="actions">
+        <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script>
+  const attemptId = new URLSearchParams(location.search).get("attempt");
+  const attempt = getAttempt(attemptId);
+
+  if (!attempt || !attempt.score === undefined) {
+    document.querySelector("main .shell").innerHTML = `<p>ফলাফল খুঁজে পাওয়া যায়নি।</p>`;
+  } else {
+    const quiz = getQuiz(attempt.quizId);
+    document.getElementById("quiz-title").textContent = quiz.title_bn;
+    document.getElementById("score").textContent = attempt.score;
+    document.getElementById("of").textContent = `/ ${attempt.total} সঠিক — ${attempt.student.name}`;
+
+    const statusLine = document.getElementById("status-line");
+    if (attempt.status === "ended-early") {
+      statusLine.innerHTML = `<span class="status-tag ended-early">সময়ের আগে বন্ধ হয়েছে</span> — ট্যাব পরিবর্তনের কারণে পরীক্ষাটি স্বয়ংক্রিয়ভাবে জমা হয়ে গেছে।`;
+    } else {
+      statusLine.innerHTML = `<span class="status-tag completed">সম্পন্ন হয়েছে</span>`;
+    }
+
+    const reviewEl = document.getElementById("review");
+    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
+    quiz.questions.forEach((q, i) => {
+      const given = attempt.answers[q.id];
+      const correct = given === q.correctIndex;
+      const div = document.createElement("div");
+      div.className = "review-item";
+      div.innerHTML = `
+        <div class="q">${i + 1}. ${q.text_bn}</div>
+        <div class="hint">তোমার উত্তর: ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : "উত্তর দাওনি"}</div>
+        ${!correct ? `<div class="hint">সঠিক উত্তর: ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
+        <span class="mark ${correct ? "correct" : "wrong"}">${correct ? "সঠিক" : "ভুল"}</span>
+      `;
+      reviewEl.appendChild(div);
+    });
+  }
+</script>
+</body>
+</html>
