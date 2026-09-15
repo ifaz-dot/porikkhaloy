@@ -38,6 +38,10 @@ export async function addSubject({ name_bn, name_en, desc_bn }) {
   return addDoc(collection(db, "subjects"), { name_bn, name_en, desc_bn });
 }
 
+export async function updateSubject(id, { name_bn, name_en, desc_bn }) {
+  return updateDoc(doc(db, "subjects", id), { name_bn, name_en, desc_bn });
+}
+
 export async function deleteSubject(id) {
   // Also remove any quizzes under this subject so orphans don't linger.
   const quizzes = await getQuizzesBySubject(id);
@@ -76,21 +80,38 @@ export async function deleteQuiz(id) {
 }
 
 export async function addQuestionToQuiz(quizId, question) {
-  const withId = { id: "q_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8), ...question };
+  const withId = { id: "q_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8), explanation_bn: "", ...question };
   return updateDoc(doc(db, "quizzes", quizId), { questions: arrayUnion(withId) });
 }
 
 export async function addQuestionsToQuiz(quizId, questions) {
   const withIds = questions.map((q, i) => ({
     id: "q_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6),
+    explanation_bn: "",
     ...q
   }));
   return updateDoc(doc(db, "quizzes", quizId), { questions: arrayUnion(...withIds) });
 }
 
+export async function updateQuestionInQuiz(quizId, questionId, updatedFields) {
+  const quiz = await getQuiz(quizId);
+  if (!quiz) return;
+  const questions = (quiz.questions || []).map(q =>
+    q.id === questionId ? { ...q, ...updatedFields } : q
+  );
+  return updateDoc(doc(db, "quizzes", quizId), { questions });
+}
+
+export async function deleteQuestionFromQuiz(quizId, questionId) {
+  const quiz = await getQuiz(quizId);
+  if (!quiz) return;
+  const questions = (quiz.questions || []).filter(q => q.id !== questionId);
+  return updateDoc(doc(db, "quizzes", quizId), { questions });
+}
+
 /* ---- CSV import helper ----
    Expected format per line, comma-separated, no header needed:
-   প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স(０-৩)
+   প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স(０-৩),ব্যাখ্যা(ঐচ্ছিক)
    Commas inside a field should be wrapped in double quotes: "...,..."
 */
 export function parseQuestionCSV(text) {
@@ -114,6 +135,7 @@ export function parseQuestionCSV(text) {
       text_bn: r[0],
       options_bn: [r[1], r[2], r[3], r[4]],
       correctIndex: Math.max(0, Math.min(3, parseInt(r[5], 10) || 0)),
+      explanation_bn: r[6] || "",
     }));
 }
 
