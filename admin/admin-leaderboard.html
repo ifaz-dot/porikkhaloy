@@ -21,7 +21,7 @@
 
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস / রোল</th><th>স্কোর</th><th>সময়</th><th>জমার সময়</th></tr></thead>
+        <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস / ফোন</th><th>স্কোর</th><th>সময়</th><th>জমার সময়</th></tr></thead>
         <tbody id="board-body"></tbody>
       </table>
     </div>
@@ -70,7 +70,7 @@
       tr.innerHTML = `
         <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
         <td>${a.student?.name || "—"}</td>
-        <td class="hint">${a.student?.cls || "—"} / ${a.student?.roll || "—"}</td>
+        <td class="hint">${a.student?.cls || "—"} / ${a.student?.phone || a.student?.roll || "—"}</td>
         <td>${a.score}/${a.total}</td>
         <td class="hint">${m}ম ${s}সে</td>
         <td class="hint">${when}</td>
