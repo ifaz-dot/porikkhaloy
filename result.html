@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ফলাফল — পরীক্ষালয়</title>
+<title>Result — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="site-header">
   <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
   </div>
 </header>
 
@@ -18,7 +19,7 @@
   <div class="shell" style="max-width:720px;">
     <section class="block">
       <div id="status-line" class="hint" style="margin-bottom:10px;"></div>
-      <h2 id="quiz-title">লোড হচ্ছে…</h2>
+      <h2 id="quiz-title" data-i18n="loading">Loading…</h2>
 
       <div class="score-block">
         <div class="big" id="score">–</div>
@@ -28,37 +29,42 @@
       <div id="review"></div>
 
       <div class="actions">
-        <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
-        <a href="#" id="leaderboard-link" class="btn btn-mustard">লিডারবোর্ড দেখো</a>
+        <a href="index.html" class="btn btn-outline" data-i18n="home">Back to homepage</a>
+        <a href="#" id="leaderboard-link" class="btn btn-mustard" data-i18n="viewLeaderboard">View leaderboard</a>
       </div>
     </section>
   </div>
 </main>
 
 <script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
   import { getAttempt, getQuiz } from "./js/data.js";
 
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+
+  const labels = localStorage.getItem("site_lang") === "bn" ? ["ক","খ","গ","ঘ","ঙ"] : ["A","B","C","D","E"];
   const attemptId = new URLSearchParams(location.search).get("attempt");
   const attempt = getAttempt(attemptId);
 
   if (!attempt || attempt.score === undefined) {
-    document.querySelector("main .shell").innerHTML = `<p>ফলাফল খুঁজে পাওয়া যায়নি।</p>`;
+    document.querySelector("main .shell").innerHTML = `<p>${t("resultNotFound")}</p>`;
   } else {
     const quiz = await getQuiz(attempt.quizId);
     document.getElementById("quiz-title").textContent = quiz.title_bn;
     document.getElementById("score").textContent = attempt.score;
-    document.getElementById("of").textContent = `/ ${attempt.total} সঠিক — ${attempt.student.name}`;
+    document.getElementById("of").textContent = `/ ${attempt.total} — ${attempt.student.name}`;
     document.getElementById("leaderboard-link").href = `leaderboard.html?quiz=${attempt.quizId}`;
 
     const statusLine = document.getElementById("status-line");
     if (attempt.status === "ended-early") {
-      statusLine.innerHTML = `<span class="status-tag ended-early">সময়ের আগে বন্ধ হয়েছে</span> — ট্যাব পরিবর্তনের কারণে পরীক্ষাটি স্বয়ংক্রিয়ভাবে জমা হয়ে গেছে।`;
+      statusLine.innerHTML = `<span class="status-tag ended-early">${t("endedEarly")}</span> — ${t("endedEarlyDesc")}`;
     } else {
-      statusLine.innerHTML = `<span class="status-tag completed">সম্পন্ন হয়েছে</span>`;
+      statusLine.innerHTML = `<span class="status-tag completed">${t("completed")}</span>`;
     }
 
     const reviewEl = document.getElementById("review");
-    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
     quiz.questions.forEach((q, i) => {
       const given = attempt.answers[q.id];
       const correct = given === q.correctIndex;
@@ -66,10 +72,10 @@
       div.className = "review-item";
       div.innerHTML = `
         <div class="q">${i + 1}. ${q.text_bn}</div>
-        <div class="hint">তোমার উত্তর: ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : "উত্তর দাওনি"}</div>
-        ${!correct ? `<div class="hint">সঠিক উত্তর: ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
-        ${q.explanation_bn ? `<div class="hint" style="margin-top:6px; padding:10px 12px; background:var(--paper-2); border-radius:var(--radius);"><strong>ব্যাখ্যা:</strong> ${q.explanation_bn}</div>` : ""}
-        <span class="mark ${correct ? "correct" : "wrong"}">${correct ? "সঠিক" : "ভুল"}</span>
+        <div class="hint">${t("yourAnswer")} ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : t("noAnswer")}</div>
+        ${!correct ? `<div class="hint">${t("correctAnswer")} ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
+        ${q.explanation_bn ? `<div class="hint" style="margin-top:6px; padding:10px 12px; background:var(--paper-2); border-radius:var(--radius);"><strong>${t("explanation")}</strong> ${q.explanation_bn}</div>` : ""}
+        <span class="mark ${correct ? "correct" : "wrong"}">${correct ? t("correct") : t("wrong")}</span>
       `;
       reviewEl.appendChild(div);
     });
