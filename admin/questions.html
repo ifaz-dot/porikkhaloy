@@ -16,12 +16,13 @@
     <div class="toolbar">
       <div>
         <h1>বিষয় পরিচালনা</h1>
-        <p class="hint">বিষয় যোগ করো বা মুছে ফেলো। বিষয় মুছলে তার সব পরীক্ষা ও প্রশ্নও মুছে যাবে।</p>
+        <p class="hint">বিষয় যোগ, সম্পাদনা বা মুছে ফেলো। বিষয় মুছলে তার সব পরীক্ষা ও প্রশ্নও মুছে যাবে।</p>
       </div>
       <button class="btn btn-primary" id="new-subject-btn">+ নতুন বিষয়</button>
     </div>
 
     <div class="card" id="subject-form-card" style="display:none; max-width:100%; margin-bottom:24px;">
+      <input type="hidden" id="s-edit-id">
       <div class="field"><label>বিষয়ের নাম (বাংলা)</label><input type="text" id="s-name-bn" placeholder="যেমন: ফাইন্যান্স"></div>
       <div class="field"><label>বিষয়ের নাম (English)</label><input type="text" id="s-name-en" placeholder="e.g. Finance"></div>
       <div class="field"><label>সংক্ষিপ্ত বিবরণ</label><input type="text" id="s-desc" placeholder="এক লাইনে বিবরণ"></div>
@@ -30,7 +31,7 @@
     </div>
 
     <table style="margin-bottom:40px;">
-      <thead><tr><th>বিষয়</th><th>English</th><th style="width:90px;">পরীক্ষা</th><th style="width:80px;"></th></tr></thead>
+      <thead><tr><th>বিষয়</th><th>English</th><th style="width:90px;">পরীক্ষা</th><th style="width:150px;"></th></tr></thead>
       <tbody id="subjects-body"></tbody>
     </table>
 
@@ -48,7 +49,7 @@
   </div>
 </div>
 
-<!-- Add question modal-ish inline panel -->
+<!-- Add/Edit question overlay -->
 <div class="overlay" id="q-overlay">
   <div class="overlay-box" style="max-width:560px; text-align:left; border-top-color:var(--indigo);">
     <h2 style="color:var(--indigo);" id="q-form-title">নতুন প্রশ্ন যোগ করো</h2>
@@ -63,6 +64,7 @@
         <option value="0">ক</option><option value="1">খ</option><option value="2">গ</option><option value="3">ঘ</option>
       </select>
     </div>
+    <div class="field"><label>ব্যাখ্যা (ঐচ্ছিক — ফলাফল পৃষ্ঠায় দেখানো হবে)</label><input type="text" id="q-explanation"></div>
     <div style="display:flex; gap:10px; margin-top:10px;">
       <button class="btn btn-primary" id="q-save-btn">সংরক্ষণ করো</button>
       <button class="btn btn-outline" id="q-cancel-btn" type="button">বাতিল</button>
@@ -73,9 +75,10 @@
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
   import {
-    getSubjects, addSubject, deleteSubject,
+    getSubjects, addSubject, updateSubject, deleteSubject,
     getQuizzesBySubject, addQuiz, deleteQuiz,
-    addQuestionToQuiz, addQuestionsToQuiz, parseQuestionCSV
+    addQuestionToQuiz, addQuestionsToQuiz, updateQuestionInQuiz,
+    deleteQuestionFromQuiz, parseQuestionCSV
   } from "../js/data.js";
 
   renderAdminNav("questions.html");
@@ -98,7 +101,10 @@
         <td>${s.name_bn}</td>
         <td class="hint">${s.name_en || ""}</td>
         <td>${quizzes.length}</td>
-        <td><button class="btn btn-outline" data-del-subject="${s.id}" style="padding:6px 12px; font-size:.78rem;">মুছো</button></td>
+        <td style="display:flex; gap:6px;">
+          <button class="btn btn-outline" data-edit-subject="${s.id}" style="padding:6px 12px; font-size:.78rem;">সম্পাদনা</button>
+          <button class="btn btn-outline" data-del-subject="${s.id}" style="padding:6px 12px; font-size:.78rem;">মুছো</button>
+        </td>
       `;
       body.appendChild(tr);
     }
@@ -110,23 +116,40 @@
         await populateSubjectSelect();
       });
     });
+    body.querySelectorAll("[data-edit-subject]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const s = subjects.find(x => x.id === btn.dataset.editSubject);
+        if (!s) return;
+        document.getElementById("s-edit-id").value = s.id;
+        document.getElementById("s-name-bn").value = s.name_bn || "";
+        document.getElementById("s-name-en").value = s.name_en || "";
+        document.getElementById("s-desc").value = s.desc_bn || "";
+        document.getElementById("subject-form-card").style.display = "block";
+      });
+    });
   }
 
   document.getElementById("new-subject-btn").addEventListener("click", () => {
+    document.getElementById("s-edit-id").value = "";
+    document.getElementById("s-name-bn").value = "";
+    document.getElementById("s-name-en").value = "";
+    document.getElementById("s-desc").value = "";
     document.getElementById("subject-form-card").style.display = "block";
   });
   document.getElementById("cancel-subject-btn").addEventListener("click", () => {
     document.getElementById("subject-form-card").style.display = "none";
   });
   document.getElementById("save-subject-btn").addEventListener("click", async () => {
+    const editId = document.getElementById("s-edit-id").value;
     const name_bn = document.getElementById("s-name-bn").value.trim();
     const name_en = document.getElementById("s-name-en").value.trim();
     const desc_bn = document.getElementById("s-desc").value.trim();
     if (!name_bn) { alert("বিষয়ের বাংলা নাম আবশ্যক।"); return; }
-    await addSubject({ name_bn, name_en, desc_bn });
-    document.getElementById("s-name-bn").value = "";
-    document.getElementById("s-name-en").value = "";
-    document.getElementById("s-desc").value = "";
+    if (editId) {
+      await updateSubject(editId, { name_bn, name_en, desc_bn });
+    } else {
+      await addSubject({ name_bn, name_en, desc_bn });
+    }
     document.getElementById("subject-form-card").style.display = "none";
     await loadSubjects();
     await populateSubjectSelect();
@@ -149,7 +172,8 @@
     await renderQuizArea();
   });
 
-  let currentQuizIdForAdd = null;
+  let currentQuizIdForForm = null;
+  let editingQuestionId = null;
 
   async function renderQuizArea() {
     const container = document.getElementById("quiz-groups");
@@ -173,15 +197,19 @@
           </div>
         </div>
         <table>
-          <thead><tr><th style="width:44px;">#</th><th>প্রশ্ন</th><th style="width:140px;">সঠিক উত্তর</th></tr></thead>
+          <thead><tr><th style="width:44px;">#</th><th>প্রশ্ন</th><th style="width:140px;">সঠিক উত্তর</th><th style="width:140px;"></th></tr></thead>
           <tbody>
             ${(quiz.questions || []).length === 0
-              ? `<tr><td colspan="3" class="hint">এখনও কোনো প্রশ্ন নেই।</td></tr>`
+              ? `<tr><td colspan="4" class="hint">এখনও কোনো প্রশ্ন নেই।</td></tr>`
               : quiz.questions.map((q, i) => `
                 <tr>
                   <td>${i + 1}</td>
                   <td>${q.text_bn}</td>
                   <td>${["ক","খ","গ","ঘ"][q.correctIndex]}. ${q.options_bn[q.correctIndex]}</td>
+                  <td style="display:flex; gap:6px;">
+                    <button class="btn btn-outline" data-edit-q="${quiz.id}|${q.id}" style="padding:5px 10px; font-size:.75rem;">সম্পাদনা</button>
+                    <button class="btn btn-outline" data-del-q="${quiz.id}|${q.id}" style="padding:5px 10px; font-size:.75rem;">মুছো</button>
+                  </td>
                 </tr>
               `).join("")}
           </tbody>
@@ -192,8 +220,26 @@
 
     container.querySelectorAll("[data-add-q]").forEach(btn => {
       btn.addEventListener("click", () => {
-        currentQuizIdForAdd = btn.dataset.addQ;
+        currentQuizIdForForm = btn.dataset.addQ;
         openQuestionForm();
+      });
+    });
+    container.querySelectorAll("[data-edit-q]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const [quizId, questionId] = btn.dataset.editQ.split("|");
+        const quiz = quizzes.find(q => q.id === quizId);
+        const question = quiz?.questions.find(q => q.id === questionId);
+        if (!question) return;
+        currentQuizIdForForm = quizId;
+        openQuestionForm(question);
+      });
+    });
+    container.querySelectorAll("[data-del-q]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("এই প্রশ্নটি মুছে ফেলা হবে। নিশ্চিত?")) return;
+        const [quizId, questionId] = btn.dataset.delQ.split("|");
+        await deleteQuestionFromQuiz(quizId, questionId);
+        await renderQuizArea();
       });
     });
     container.querySelectorAll("[data-del-quiz]").forEach(btn => {
@@ -211,7 +257,7 @@
         const text = await file.text();
         const parsed = parseQuestionCSV(text);
         if (parsed.length === 0) {
-          alert("CSV থেকে কোনো বৈধ প্রশ্ন পাওয়া যায়নি। ফরম্যাট: প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স");
+          alert("CSV থেকে কোনো বৈধ প্রশ্ন পাওয়া যায়নি। ফরম্যাট: প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স,ব্যাখ্যা(ঐচ্ছিক)");
           return;
         }
         await addQuestionsToQuiz(input.dataset.importQ, parsed);
@@ -241,11 +287,15 @@
     });
   }
 
-  /* ---------------- add-question overlay ---------------- */
+  /* ---------------- add/edit-question overlay ---------------- */
   const qOverlay = document.getElementById("q-overlay");
-  function openQuestionForm() {
-    ["q-text","q-opt0","q-opt1","q-opt2","q-opt3"].forEach(id => document.getElementById(id).value = "");
-    document.getElementById("q-correct").value = "0";
+  function openQuestionForm(existingQuestion) {
+    editingQuestionId = existingQuestion ? existingQuestion.id : null;
+    document.getElementById("q-form-title").textContent = existingQuestion ? "প্রশ্ন সম্পাদনা করো" : "নতুন প্রশ্ন যোগ করো";
+    document.getElementById("q-text").value = existingQuestion?.text_bn || "";
+    [0,1,2,3].forEach(i => document.getElementById(`q-opt${i}`).value = existingQuestion?.options_bn?.[i] || "");
+    document.getElementById("q-correct").value = String(existingQuestion?.correctIndex ?? 0);
+    document.getElementById("q-explanation").value = existingQuestion?.explanation_bn || "";
     qOverlay.classList.add("show");
   }
   document.getElementById("q-cancel-btn").addEventListener("click", () => qOverlay.classList.remove("show"));
@@ -253,8 +303,14 @@
     const text_bn = document.getElementById("q-text").value.trim();
     const options_bn = [0,1,2,3].map(i => document.getElementById(`q-opt${i}`).value.trim());
     const correctIndex = parseInt(document.getElementById("q-correct").value, 10);
+    const explanation_bn = document.getElementById("q-explanation").value.trim();
     if (!text_bn || options_bn.some(o => !o)) { alert("সব ঘর পূরণ করো।"); return; }
-    await addQuestionToQuiz(currentQuizIdForAdd, { text_bn, options_bn, correctIndex });
+
+    if (editingQuestionId) {
+      await updateQuestionInQuiz(currentQuizIdForForm, editingQuestionId, { text_bn, options_bn, correctIndex, explanation_bn });
+    } else {
+      await addQuestionToQuiz(currentQuizIdForForm, { text_bn, options_bn, correctIndex, explanation_bn });
+    }
     qOverlay.classList.remove("show");
     await renderQuizArea();
   });
