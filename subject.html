@@ -1,36 +1,46 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>বিষয়ের কুইজ তালিকা — পরীক্ষালয়</title>
+<title>Subject — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="site-header">
   <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
-    <nav><a href="index.html" class="hint">← বিষয় তালিকায় ফিরে যাও</a></nav>
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra">
+      <a href="index.html" class="hint" data-i18n="backToSubjects">← Back to subjects</a>
+    </nav>
   </div>
 </header>
 
 <main>
   <div class="shell">
     <section class="hero" style="padding-bottom:24px; margin-bottom:32px;">
-      <div class="kicker" id="subject-kicker">বিষয়</div>
-      <h1 id="subject-title" style="font-size:2rem;">লোড হচ্ছে…</h1>
+      <div class="kicker" id="subject-kicker">Subject</div>
+      <h1 id="subject-title" style="font-size:2rem;" data-i18n="loading">Loading…</h1>
     </section>
 
     <section class="block">
-      <h2>উপলব্ধ পরীক্ষাসমূহ</h2>
+      <h2 data-i18n="availableExams">Available exams</h2>
       <div id="quiz-list"></div>
     </section>
   </div>
 </main>
 
 <script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
   import { getSubjects, getQuizzesBySubject, hasAttempted } from "./js/data.js";
+
+  applyI18n();
+  const nav = document.getElementById("nav-extra");
+  const backLink = nav.firstElementChild;
+  renderSiteNavExtras(nav);
+  nav.insertBefore(backLink, nav.firstChild);
 
   const params = new URLSearchParams(location.search);
   const subjectId = params.get("id");
@@ -40,14 +50,14 @@
   const subject = subjects.find(s => s.id === subjectId);
 
   if (!subject) {
-    document.getElementById("subject-title").textContent = "বিষয় খুঁজে পাওয়া যায়নি";
+    document.getElementById("subject-title").textContent = t("subjectNotFound");
   } else {
     document.getElementById("subject-kicker").textContent = subject.name_en || "";
     document.getElementById("subject-title").textContent = subject.name_bn;
 
     const quizzes = await getQuizzesBySubject(subjectId);
     if (quizzes.length === 0) {
-      list.innerHTML = `<p class="hint">এই বিষয়ে এখনও কোনো পরীক্ষা যোগ করা হয়নি।</p>`;
+      list.innerHTML = `<p class="hint">${t("noExamsYet")}</p>`;
     }
     quizzes.forEach(q => {
       const already = hasAttempted(q.id);
@@ -57,10 +67,10 @@
       card.style.maxWidth = "100%";
       card.innerHTML = `
         <h3 style="font-size:1.1rem;">${q.title_bn}</h3>
-        <p class="hint">সময়সীমা: ${Math.floor(q.durationSeconds / 60)} মিনিট · প্রশ্ন সংখ্যা: ${(q.questions || []).length}</p>
+        <p class="hint">${t("duration")}: ${Math.floor(q.durationSeconds / 60)} ${t("minutes")} · ${t("questions")}: ${(q.questions || []).length}</p>
         ${already
-          ? `<span class="status-tag ended-early">ইতিমধ্যে অংশ নেওয়া হয়েছে</span>`
-          : `<a class="btn btn-mustard" href="start.html?quiz=${q.id}">পরীক্ষা শুরু করো</a>`}
+          ? `<span class="status-tag ended-early">${t("alreadyAttempted")}</span>`
+          : `<a class="btn btn-mustard" href="start.html?quiz=${q.id}">${t("startExamBtn")}</a>`}
       `;
       list.appendChild(card);
     });
