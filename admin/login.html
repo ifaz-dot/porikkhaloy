@@ -14,7 +14,7 @@
     <h1 style="font-size:1.6rem;">অ্যাডমিন প্যানেল</h1>
     <p class="hint" style="margin-bottom:24px;">শুধুমাত্র অনুমোদিত অ্যাডমিনরা এখানে প্রবেশ করতে পারবেন।</p>
 
-    <div class="error-box" id="err">ভুল ইমেইল বা পাসওয়ার্ড।</div>
+    <div class="error-box" id="err"></div>
 
     <form class="card" id="login-form" style="max-width:100%;">
       <div class="field">
@@ -25,22 +25,48 @@
         <label for="pass">পাসওয়ার্ড</label>
         <input type="password" id="pass" required>
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%;">লগইন করো</button>
-      <p class="hint" style="margin-top:14px;">
-        ডেমো মোড — এই মুহূর্তে যেকোনো ইমেইল/পাসওয়ার্ড দিয়ে ঢোকা যাবে। আসল ব্যাকএন্ড যুক্ত হলে
-        Firebase Auth + Firestore-এর <code>role: "admin"</code> চেক এখানে বসবে।
-      </p>
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="submit-btn">লগইন করো</button>
     </form>
   </div>
 </main>
 
-<script>
-  document.getElementById("login-form").addEventListener("submit", (e) => {
+<script type="module">
+  import { auth, db } from "../js/firebase-config.js";
+  import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const err = document.getElementById("err");
+  const btn = document.getElementById("submit-btn");
+
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    // Real backend: Firebase Auth sign-in, then verify a Firestore
-    // `admins/{uid}` doc exists before granting access.
-    sessionStorage.setItem("admin_session", "demo");
-    location.href = "dashboard.html";
+    err.classList.remove("show");
+    btn.disabled = true;
+    btn.textContent = "যাচাই করা হচ্ছে…";
+
+    const email = document.getElementById("email").value.trim();
+    const pass = document.getElementById("pass").value;
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const adminDoc = await getDoc(doc(db, "admins", cred.user.uid));
+
+      if (!adminDoc.exists()) {
+        err.textContent = "এই অ্যাকাউন্টের অ্যাডমিন অনুমতি নেই।";
+        err.classList.add("show");
+        await auth.signOut();
+        btn.disabled = false;
+        btn.textContent = "লগইন করো";
+        return;
+      }
+
+      location.href = "dashboard.html";
+    } catch (error) {
+      err.textContent = "ভুল ইমেইল বা পাসওয়ার্ড।";
+      err.classList.add("show");
+      btn.disabled = false;
+      btn.textContent = "লগইন করো";
+    }
   });
 </script>
 </body>
