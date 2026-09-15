@@ -1,89 +1,123 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>পরীক্ষা শুরু করো — পরীক্ষালয়</title>
+<title>Start exam — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="site-header">
   <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
   </div>
 </header>
 
 <main>
   <div class="shell">
     <section class="block">
-      <h2 id="quiz-title">লোড হচ্ছে…</h2>
+      <h2 id="quiz-title" data-i18n="loading">Loading…</h2>
       <p class="hint" id="quiz-meta" style="margin-bottom:24px;"></p>
 
       <div class="error-box" id="err"></div>
 
+      <!-- signed-in student: just confirm + go -->
+      <div class="card" id="signed-in-card" style="display:none;">
+        <p class="hint" id="signed-in-line" style="margin-bottom:18px;"></p>
+        <button class="btn btn-primary" id="signed-in-start-btn" data-i18n="startExamBtn">Start an exam</button>
+        <p class="hint" style="margin-top:10px;" data-i18n="notYouSwitch">Not you? Log out and start again.</p>
+      </div>
+
+      <!-- guest form -->
       <form class="card" id="start-form" style="display:none;">
-        <div class="field">
-          <label for="name">পূর্ণ নাম</label>
-          <input type="text" id="name" required>
-        </div>
-        <div class="field">
-          <label for="cls">ক্লাস</label>
-          <input type="text" id="cls" placeholder="যেমন: HSC ২য় বর্ষ" required>
-        </div>
-        <div class="field">
-          <label for="roll">রোল নম্বর</label>
-          <input type="text" id="roll" required>
-        </div>
-        <p class="hint" style="margin-bottom:20px;">
-          শুরু করার পর টাইমার চালু হবে। ট্যাব পরিবর্তন করলে বা পেজ ছেড়ে গেলে একটি সতর্কবার্তা
-          দেখানো হবে — সময়মতো না ফিরলে পরীক্ষা স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে।
+        <div class="field"><label data-i18n="fullName">Full name</label><input type="text" id="name" required></div>
+        <div class="field"><label data-i18n="className">Class</label><input type="text" id="cls" required></div>
+        <div class="field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone" required></div>
+        <p class="hint" style="margin-bottom:20px;" data-i18n="startRulesText">
+          Once you start, the timer begins. Switching tabs or leaving the page shows a warning — if you don't return in time, the exam is auto-submitted.
         </p>
-        <button type="submit" class="btn btn-primary" id="submit-btn">পরীক্ষা শুরু করো</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn" data-i18n="startExamBtn">Start an exam</button>
       </form>
     </section>
   </div>
 </main>
 
 <script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
   import { getQuiz, hasAttempted, startAttempt } from "./js/data.js";
+  import { watchStudentAuth, getStudentProfile } from "./js/student-auth.js";
+
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
 
   const quizId = new URLSearchParams(location.search).get("quiz");
   const err = document.getElementById("err");
-  const form = document.getElementById("start-form");
+  const guestForm = document.getElementById("start-form");
+  const signedInCard = document.getElementById("signed-in-card");
 
   const quiz = await getQuiz(quizId);
 
   if (!quiz) {
-    document.getElementById("quiz-title").textContent = "পরীক্ষা খুঁজে পাওয়া যায়নি";
+    document.getElementById("quiz-title").textContent = t("quizNotFound");
   } else {
     document.getElementById("quiz-title").textContent = quiz.title_bn;
     document.getElementById("quiz-meta").textContent =
-      `সময়সীমা: ${Math.floor(quiz.durationSeconds / 60)} মিনিট · প্রশ্ন সংখ্যা: ${(quiz.questions || []).length}`;
-    form.style.display = "block";
+      `${t("duration")}: ${Math.floor(quiz.durationSeconds / 60)} ${t("minutes")} · ${t("questions")}: ${(quiz.questions || []).length}`;
 
-    if (hasAttempted(quizId)) {
-      err.textContent = "এই নেটওয়ার্ক থেকে তুমি ইতিমধ্যে এই পরীক্ষায় অংশ নিয়েছ। প্রতিটি সংযোগ থেকে একবারই অংশ নেওয়া যায়।";
+    const locked = hasAttempted(quizId);
+    if (locked) {
+      err.textContent = t("alreadyAttemptedMsg");
       err.classList.add("show");
-      document.getElementById("submit-btn").disabled = true;
     }
+
+    let studentProfile = null;
+    let studentUid = null;
+
+    watchStudentAuth(async (user) => {
+      if (user) {
+        studentUid = user.uid;
+        studentProfile = await getStudentProfile(user.uid);
+        guestForm.style.display = "none";
+        signedInCard.style.display = locked ? "none" : "block";
+        document.getElementById("signed-in-line").textContent =
+          `${t("signedInAs")} ${studentProfile?.name || user.email} (${studentProfile?.cls || ""})`;
+      } else {
+        signedInCard.style.display = "none";
+        guestForm.style.display = locked ? "none" : "block";
+      }
+    });
+
+    document.getElementById("signed-in-start-btn")?.addEventListener("click", () => {
+      if (hasAttempted(quizId)) return;
+      const student = {
+        name: studentProfile?.name || "",
+        cls: studentProfile?.cls || "",
+        phone: studentProfile?.phone || "",
+        email: studentProfile?.email || "",
+        uid: studentUid,
+      };
+      const attemptId = startAttempt(quizId, student);
+      location.href = `quiz.html?attempt=${attemptId}`;
+    });
+
+    guestForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (hasAttempted(quizId)) return;
+      const student = {
+        name: document.getElementById("name").value.trim(),
+        cls: document.getElementById("cls").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+      };
+      // Real backend: this call goes to the Worker, which checks the
+      // requester's IP against ipAttempts/{quizId}_{ip} before creating
+      // the attempt. Here we just lock it in localStorage.
+      const attemptId = startAttempt(quizId, student);
+      location.href = `quiz.html?attempt=${attemptId}`;
+    });
   }
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (hasAttempted(quizId)) return;
-
-    const student = {
-      name: document.getElementById("name").value.trim(),
-      cls: document.getElementById("cls").value.trim(),
-      roll: document.getElementById("roll").value.trim(),
-    };
-    // Real backend: this call goes to the Worker, which checks the
-    // requester's IP against ipAttempts/{quizId}_{ip} before creating
-    // the attempt. Here we just lock it in localStorage.
-    const attemptId = startAttempt(quizId, student);
-    location.href = `quiz.html?attempt=${attemptId}`;
-  });
 </script>
 </body>
 </html>
