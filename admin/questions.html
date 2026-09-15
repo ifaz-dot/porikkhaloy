@@ -24,10 +24,11 @@
 </div>
 
 <script src="../js/data.js"></script>
-<script src="../js/admin-nav.js"></script>
-<script>
+<script type="module">
+  import { renderAdminNav } from "../js/admin-nav.js";
   renderAdminNav("questions.html");
-
+</script>
+<script>
   const container = document.getElementById("quiz-groups");
   QUIZZES.forEach(quiz => {
     const subject = getSubjects().find(s => s.id === quiz.subjectId);
