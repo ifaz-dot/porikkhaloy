@@ -66,6 +66,7 @@
         <div class="q">${i + 1}. ${q.text_bn}</div>
         <div class="hint">তোমার উত্তর: ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : "উত্তর দাওনি"}</div>
         ${!correct ? `<div class="hint">সঠিক উত্তর: ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
+        ${q.explanation_bn ? `<div class="hint" style="margin-top:6px; padding:10px 12px; background:var(--paper-2); border-radius:var(--radius);"><strong>ব্যাখ্যা:</strong> ${q.explanation_bn}</div>` : ""}
         <span class="mark ${correct ? "correct" : "wrong"}">${correct ? "সঠিক" : "ভুল"}</span>
       `;
       reviewEl.appendChild(div);
