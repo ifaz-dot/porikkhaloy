@@ -1,79 +1,132 @@
 /*
-  DATA LAYER — DEMO MODE
+  DATA LAYER — FIRESTORE BACKED (subjects & quizzes)
   ------------------------------------------------------------
-  This file stands in for the backend we scoped earlier
-  (Firestore for data, a Worker/Function for IP-check + timer
-  validation + force-end). Right now everything runs in the
-  browser with localStorage so the site works stand-alone.
+  Subjects and quizzes/questions now live in Firestore, so admin
+  changes (add/remove subject, add/import questions) show up for
+  every student immediately. Attempts (who took what, scores,
+  IP-lock) are still localStorage-only — that part still needs a
+  real backend (Worker/Function) to sync across devices, as
+  scoped earlier.
 
-  When you wire up the real backend, replace the functions in
-  this file only — every page calls these functions, not
-  localStorage directly, so the swap is contained here.
+  Firestore shape:
+    subjects/{id}            -> { name_bn, name_en, desc_bn }
+    quizzes/{id}             -> { subjectId, title_bn, type,
+                                   durationSeconds,
+                                   questions: [ { id, text_bn,
+                                     options_bn: [...], correctIndex } ] }
 */
 
-const SUBJECTS = [
-  { id: "finance", name_bn: "ফাইন্যান্স", name_en: "Finance", desc_bn: "আর্থিক বাজার ও প্রতিষ্ঠান" },
-  { id: "accounting", name_bn: "হিসাববিজ্ঞান", name_en: "Accounting", desc_bn: "আর্থিক হিসাবরক্ষণ" },
-  { id: "economics", name_bn: "অর্থনীতি", name_en: "Economics", desc_bn: "সামষ্টিক অর্থনীতি" },
-  { id: "marketing", name_bn: "মার্কেটিং", name_en: "Marketing", desc_bn: "বিপণন নীতিমালা" },
-];
+import { db } from "./firebase-config.js";
+import {
+  collection, getDocs, doc, getDoc, addDoc, deleteDoc, updateDoc,
+  arrayUnion, query, where
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-const QUIZZES = [
-  {
-    id: "fin-mkt-01",
-    subjectId: "finance",
-    title_bn: "আর্থিক বাজার ও প্রতিষ্ঠান — মডেল টেস্ট ১",
-    type: "exam",
-    durationSeconds: 600,
-    questions: [
-      {
-        id: "q1",
-        text_bn: "নিচের কোনটি একটি আর্থিক মধ্যস্থতাকারী প্রতিষ্ঠানের উদাহরণ?",
-        options_bn: ["বাণিজ্যিক ব্যাংক", "টেক্সটাইল কারখানা", "সুপারমার্কেট", "ফার্মেসি"],
-        correctIndex: 0,
-      },
-      {
-        id: "q2",
-        text_bn: "প্রাইমারি মার্কেটে কী লেনদেন হয়?",
-        options_bn: ["নতুন সিকিউরিটিজ ইস্যু", "পুরাতন শেয়ার বেচাকেনা", "নগদ অর্থ বিনিময়", "পণ্য ক্রয়বিক্রয়"],
-        correctIndex: 0,
-      },
-      {
-        id: "q3",
-        text_bn: "কোনটি মুদ্রা বাজারের হাতিয়ার (money market instrument)?",
-        options_bn: ["ট্রেজারি বিল", "কমন স্টক", "মিউচুয়াল ফান্ড", "ডিবেঞ্চার"],
-        correctIndex: 0,
-      },
-      {
-        id: "q4",
-        text_bn: "কেন্দ্রীয় ব্যাংকের প্রধান কাজ কী?",
-        options_bn: ["মুদ্রানীতি নিয়ন্ত্রণ", "খুচরা পণ্য বিক্রয়", "কর আদায়", "বিদ্যুৎ সরবরাহ"],
-        correctIndex: 0,
-      },
-      {
-        id: "q5",
-        text_bn: "সেকেন্ডারি মার্কেটের অন্য নাম কী?",
-        options_bn: ["স্টক এক্সচেঞ্জ", "পাইকারি বাজার", "কমোডিটি এক্সচেঞ্জ", "ফরেক্স ডেস্ক"],
-        correctIndex: 0,
-      },
-    ],
-  },
-];
+/* ---------------- subjects ---------------- */
 
-function getSubjects() { return SUBJECTS; }
-function getQuizzesBySubject(subjectId) { return QUIZZES.filter(q => q.subjectId === subjectId); }
-function getQuiz(quizId) { return QUIZZES.find(q => q.id === quizId); }
+export async function getSubjects() {
+  const snap = await getDocs(collection(db, "subjects"));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 
-/* ---- attempt handling (localStorage stand-in for IP-blocked backend) ---- */
+export async function getSubject(id) {
+  const snap = await getDoc(doc(db, "subjects", id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function addSubject({ name_bn, name_en, desc_bn }) {
+  return addDoc(collection(db, "subjects"), { name_bn, name_en, desc_bn });
+}
+
+export async function deleteSubject(id) {
+  // Also remove any quizzes under this subject so orphans don't linger.
+  const quizzes = await getQuizzesBySubject(id);
+  for (const q of quizzes) await deleteQuiz(q.id);
+  return deleteDoc(doc(db, "subjects", id));
+}
+
+/* ---------------- quizzes ---------------- */
+
+export async function getQuizzesBySubject(subjectId) {
+  const q = query(collection(db, "quizzes"), where("subjectId", "==", subjectId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function getAllQuizzes() {
+  const snap = await getDocs(collection(db, "quizzes"));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function getQuiz(quizId) {
+  const snap = await getDoc(doc(db, "quizzes", quizId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function addQuiz({ subjectId, title_bn, type, durationSeconds }) {
+  return addDoc(collection(db, "quizzes"), {
+    subjectId, title_bn, type: type || "exam",
+    durationSeconds: durationSeconds || 600,
+    questions: []
+  });
+}
+
+export async function deleteQuiz(id) {
+  return deleteDoc(doc(db, "quizzes", id));
+}
+
+export async function addQuestionToQuiz(quizId, question) {
+  const withId = { id: "q_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8), ...question };
+  return updateDoc(doc(db, "quizzes", quizId), { questions: arrayUnion(withId) });
+}
+
+export async function addQuestionsToQuiz(quizId, questions) {
+  const withIds = questions.map((q, i) => ({
+    id: "q_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6),
+    ...q
+  }));
+  return updateDoc(doc(db, "quizzes", quizId), { questions: arrayUnion(...withIds) });
+}
+
+/* ---- CSV import helper ----
+   Expected format per line, comma-separated, no header needed:
+   প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স(０-৩)
+   Commas inside a field should be wrapped in double quotes: "...,..."
+*/
+export function parseQuestionCSV(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const rows = lines.map(line => {
+    const cells = [];
+    let cur = "", inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === "," && !inQuotes) { cells.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    cells.push(cur);
+    return cells.map(c => c.trim());
+  });
+
+  return rows
+    .filter(r => r.length >= 6)
+    .map(r => ({
+      text_bn: r[0],
+      options_bn: [r[1], r[2], r[3], r[4]],
+      correctIndex: Math.max(0, Math.min(3, parseInt(r[5], 10) || 0)),
+    }));
+}
+
+/* ---------------- attempt handling (localStorage — unchanged) ---------------- */
 
 function attemptKey(quizId) { return `attempt_lock_${quizId}`; }
 
-function hasAttempted(quizId) {
+export function hasAttempted(quizId) {
   // Real backend: server checks requester IP against /ipAttempts/{quizId}_{ip}.
   return !!localStorage.getItem(attemptKey(quizId));
 }
 
-function startAttempt(quizId, student) {
+export function startAttempt(quizId, student) {
   const attemptId = "a_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   const record = {
     attemptId, quizId, student,
@@ -86,19 +139,19 @@ function startAttempt(quizId, student) {
   return attemptId;
 }
 
-function getAttempt(attemptId) {
+export function getAttempt(attemptId) {
   const raw = localStorage.getItem("attempt_" + attemptId);
   return raw ? JSON.parse(raw) : null;
 }
 
-function saveAttempt(attempt) {
+export function saveAttempt(attempt) {
   localStorage.setItem("attempt_" + attempt.attemptId, JSON.stringify(attempt));
 }
 
-function finalizeAttempt(attemptId, status) {
+export async function finalizeAttempt(attemptId, status) {
   const attempt = getAttempt(attemptId);
   if (!attempt) return null;
-  const quiz = getQuiz(attempt.quizId);
+  const quiz = await getQuiz(attempt.quizId);
   let correct = 0;
   quiz.questions.forEach(q => {
     if (attempt.answers[q.id] === q.correctIndex) correct++;
