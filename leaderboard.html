@@ -1,52 +1,64 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>লিডারবোর্ড — পরীক্ষালয়</title>
+<title>Leaderboard — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="site-header">
   <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span><small>Porikkhaloy</small></a>
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
   </div>
 </header>
 
 <main>
   <div class="shell" style="max-width:720px;">
     <section class="block">
-      <h2 id="quiz-title">লিডারবোর্ড</h2>
-      <p class="hint" style="margin-bottom:24px;">স্কোর অনুযায়ী র‍্যাঙ্ক করা হয়েছে। সমান স্কোরে যে দ্রুত জমা দিয়েছে সে এগিয়ে থাকবে।</p>
+      <h2 id="quiz-title" data-i18n="leaderboardTitle">Leaderboard</h2>
+      <p class="hint" style="margin-bottom:24px;" data-i18n="leaderboardDesc">Ranked by score. On a tie, faster submission ranks higher.</p>
 
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস</th><th>স্কোর</th><th>সময়</th></tr></thead>
-          <tbody id="board-body"><tr><td colspan="5" class="hint">লোড হচ্ছে…</td></tr></tbody>
+          <thead><tr>
+            <th style="width:50px;" data-i18n="rank">Rank</th>
+            <th data-i18n="name">Name</th>
+            <th data-i18n="className2">Class</th>
+            <th data-i18n="score">Score</th>
+            <th data-i18n="time">Time</th>
+          </tr></thead>
+          <tbody id="board-body"><tr><td colspan="5" class="hint" data-i18n="loading">Loading…</td></tr></tbody>
         </table>
       </div>
 
       <div class="actions">
-        <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
+        <a href="index.html" class="btn btn-outline" data-i18n="home">Back to homepage</a>
       </div>
     </section>
   </div>
 </main>
 
 <script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
   import { getQuiz, getLeaderboard } from "./js/data.js";
+
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
 
   const quizId = new URLSearchParams(location.search).get("quiz");
   const body = document.getElementById("board-body");
 
   const quiz = await getQuiz(quizId);
-  document.getElementById("quiz-title").textContent = quiz ? `লিডারবোর্ড — ${quiz.title_bn}` : "লিডারবোর্ড";
+  document.getElementById("quiz-title").textContent = quiz ? `${t("leaderboardTitle")} — ${quiz.title_bn}` : t("leaderboardTitle");
 
   const board = await getLeaderboard(quizId);
   body.innerHTML = "";
   if (board.length === 0) {
-    body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কেউ এই পরীক্ষা সম্পন্ন করেনি।</td></tr>`;
+    body.innerHTML = `<tr><td colspan="5" class="hint">${t("noOneYet")}</td></tr>`;
   }
   board.forEach((a, i) => {
     const m = Math.floor(a.durationSeconds / 60);
@@ -57,7 +69,7 @@
       <td>${a.student?.name || "—"}</td>
       <td class="hint">${a.student?.cls || "—"}</td>
       <td>${a.score}/${a.total}</td>
-      <td class="hint">${m}ম ${s}সে</td>
+      <td class="hint">${m}m ${s}s</td>
     `;
     body.appendChild(tr);
   });
