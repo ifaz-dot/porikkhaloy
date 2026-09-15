@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>লিডারবোর্ড — অ্যাডমিন</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="admin">
+
+<div class="admin-shell">
+  <nav class="admin-nav" id="admin-nav"></nav>
+  <div class="admin-main">
+    <div class="toolbar">
+      <div>
+        <h1>লিডারবোর্ড</h1>
+        <p class="hint">স্কোর অনুযায়ী র‍্যাঙ্ক, সমান স্কোরে দ্রুত জমাদানকারী এগিয়ে।</p>
+      </div>
+      <select id="quiz-select" style="padding:9px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); background:#fff; font-family:var(--bangla); max-width:100%;"></select>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস / রোল</th><th>স্কোর</th><th>সময়</th><th>জমার সময়</th></tr></thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderAdminNav } from "../js/admin-nav.js";
+  import { getSubjects, getQuizzesBySubject, getLeaderboard } from "../js/data.js";
+
+  renderAdminNav("leaderboard.html");
+
+  const select = document.getElementById("quiz-select");
+  const body = document.getElementById("board-body");
+
+  const subjects = await getSubjects();
+  const allQuizzes = [];
+  for (const s of subjects) {
+    const quizzes = await getQuizzesBySubject(s.id);
+    quizzes.forEach(q => allQuizzes.push({ ...q, subjectName: s.name_bn }));
+  }
+
+  if (allQuizzes.length === 0) {
+    select.innerHTML = `<option>কোনো পরীক্ষা নেই</option>`;
+    body.innerHTML = `<tr><td colspan="6" class="hint">কোনো পরীক্ষা তৈরি করা হয়নি।</td></tr>`;
+  } else {
+    select.innerHTML = allQuizzes.map(q => `<option value="${q.id}">${q.subjectName} — ${q.title_bn}</option>`).join("");
+    await renderBoard(allQuizzes[0].id);
+  }
+
+  select.addEventListener("change", (e) => renderBoard(e.target.value));
+
+  async function renderBoard(quizId) {
+    body.innerHTML = `<tr><td colspan="6" class="hint">লোড হচ্ছে…</td></tr>`;
+    const board = await getLeaderboard(quizId);
+    body.innerHTML = "";
+    if (board.length === 0) {
+      body.innerHTML = `<tr><td colspan="6" class="hint">এখনও কেউ এই পরীক্ষা সম্পন্ন করেনি।</td></tr>`;
+      return;
+    }
+    board.forEach((a, i) => {
+      const m = Math.floor(a.durationSeconds / 60);
+      const s = a.durationSeconds % 60;
+      const when = a.startedAt ? new Date(a.startedAt).toLocaleString("bn-BD") : "—";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
+        <td>${a.student?.name || "—"}</td>
+        <td class="hint">${a.student?.cls || "—"} / ${a.student?.roll || "—"}</td>
+        <td>${a.score}/${a.total}</td>
+        <td class="hint">${m}ম ${s}সে</td>
+        <td class="hint">${when}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+</script>
+</body>
+</html>
