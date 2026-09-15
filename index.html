@@ -29,7 +29,7 @@
 
     <section class="block" id="subjects">
       <h2>বিষয় নির্বাচন করো</h2>
-      <div class="subjects" id="subject-grid"></div>
+      <div class="subjects" id="subject-grid"><p class="hint">লোড হচ্ছে…</p></div>
     </section>
 
     <section class="block">
@@ -48,20 +48,31 @@
   <div class="shell">পরীক্ষালয় — শিক্ষার্থীদের জন্য একটি বাংলা কুইজ ও পরীক্ষা প্ল্যাটফর্ম।</div>
 </div>
 
-<script src="js/data.js"></script>
-<script>
+<script type="module">
+  import { getSubjects } from "./js/data.js";
+
   const grid = document.getElementById("subject-grid");
-  getSubjects().forEach((s, i) => {
-    const a = document.createElement("a");
-    a.href = `subject.html?id=${s.id}`;
-    a.className = "subject-card";
-    a.innerHTML = `
-      <div class="num">০${i + 1}</div>
-      <h3>${s.name_bn}</h3>
-      <p>${s.desc_bn}</p>
-    `;
-    grid.appendChild(a);
-  });
+  try {
+    const subjects = await getSubjects();
+    grid.innerHTML = "";
+    if (subjects.length === 0) {
+      grid.innerHTML = `<p class="hint">এখনও কোনো বিষয় যোগ করা হয়নি।</p>`;
+    }
+    subjects.forEach((s, i) => {
+      const a = document.createElement("a");
+      a.href = `subject.html?id=${s.id}`;
+      a.className = "subject-card";
+      a.innerHTML = `
+        <div class="num">০${i + 1}</div>
+        <h3>${s.name_bn}</h3>
+        <p>${s.desc_bn || ""}</p>
+      `;
+      grid.appendChild(a);
+    });
+  } catch (e) {
+    grid.innerHTML = `<p class="hint">বিষয় লোড করা যায়নি।</p>`;
+    console.error(e);
+  }
 </script>
 </body>
 </html>
