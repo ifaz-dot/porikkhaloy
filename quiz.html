@@ -43,11 +43,12 @@
   </div>
 </div>
 
-<script src="js/data.js"></script>
-<script>
+<script type="module">
+  import { getQuiz, getAttempt, saveAttempt, finalizeAttempt } from "./js/data.js";
+
   const attemptId = new URLSearchParams(location.search).get("attempt");
-  let attempt = getAttempt(attemptId);
-  const quiz = attempt ? getQuiz(attempt.quizId) : null;
+  const attempt = getAttempt(attemptId);
+  const quiz = attempt ? await getQuiz(attempt.quizId) : null;
 
   if (!attempt || !quiz) {
     document.body.innerHTML = `<main><div class="shell"><p>পরীক্ষা খুঁজে পাওয়া যায়নি। <a href="index.html">প্রথম পাতায় ফিরে যাও</a>.</p></div></main>`;
@@ -126,14 +127,14 @@
 
   /* ---------------- submit ---------------- */
   let submitted = false;
-  function submitExam(status) {
+  async function submitExam(status) {
     if (submitted) return;
     submitted = true;
     clearInterval(timerInterval);
     clearTimeout(warningTimeout);
     // Real backend: this call goes through the Worker, which re-checks
     // elapsed time server-side before accepting the submission.
-    finalizeAttempt(attemptId, status);
+    await finalizeAttempt(attemptId, status);
     location.href = `result.html?attempt=${attemptId}`;
   }
 
