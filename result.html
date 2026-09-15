@@ -18,7 +18,7 @@
   <div class="shell" style="max-width:720px;">
     <section class="block">
       <div id="status-line" class="hint" style="margin-bottom:10px;"></div>
-      <h2 id="quiz-title"></h2>
+      <h2 id="quiz-title">লোড হচ্ছে…</h2>
 
       <div class="score-block">
         <div class="big" id="score">–</div>
@@ -34,15 +34,16 @@
   </div>
 </main>
 
-<script src="js/data.js"></script>
-<script>
+<script type="module">
+  import { getAttempt, getQuiz } from "./js/data.js";
+
   const attemptId = new URLSearchParams(location.search).get("attempt");
   const attempt = getAttempt(attemptId);
 
-  if (!attempt || !attempt.score === undefined) {
+  if (!attempt || attempt.score === undefined) {
     document.querySelector("main .shell").innerHTML = `<p>ফলাফল খুঁজে পাওয়া যায়নি।</p>`;
   } else {
-    const quiz = getQuiz(attempt.quizId);
+    const quiz = await getQuiz(attempt.quizId);
     document.getElementById("quiz-title").textContent = quiz.title_bn;
     document.getElementById("score").textContent = attempt.score;
     document.getElementById("of").textContent = `/ ${attempt.total} সঠিক — ${attempt.student.name}`;
