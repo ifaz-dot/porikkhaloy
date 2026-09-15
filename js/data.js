@@ -162,6 +162,21 @@ export async function getAllAttempts() {
     .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
 }
 
+export async function getLeaderboard(quizId) {
+  const q = query(collection(db, "attempts"), where("quizId", "==", quizId));
+  const snap = await getDocs(q);
+  const attempts = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(a => a.score !== undefined && a.endedAt && a.startedAt);
+
+  return attempts
+    .map(a => ({ ...a, durationSeconds: Math.round((a.endedAt - a.startedAt) / 1000) }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;       // higher score first
+      return a.durationSeconds - b.durationSeconds;              // then faster submission first
+    });
+}
+
 /* ---------------- attempt handling (localStorage — per-device IP-lock only) ---------------- */
 
 function attemptKey(quizId) { return `attempt_lock_${quizId}`; }
