@@ -18,20 +18,37 @@
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr><th>নাম</th><th>ক্লাস / ফোন</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>সময়</th></tr>
-      </thead>
-      <tbody id="results-body"></tbody>
-    </table>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>নাম</th><th>ক্লাস / ফোন</th><th>পরীক্ষা</th><th>স্কোর</th><th>অবস্থা</th><th>সময়</th><th style="width:100px;"></th></tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Answer detail overlay -->
+<div class="overlay" id="detail-overlay">
+  <div class="overlay-box" style="max-width:640px; text-align:left; border-top-color:var(--indigo); max-height:80vh; overflow-y:auto;">
+    <h2 style="color:var(--indigo);" id="detail-title">উত্তরপত্র</h2>
+    <div id="detail-body"></div>
+    <button class="btn btn-outline" id="detail-close-btn" type="button" style="margin-top:14px;">বন্ধ করো</button>
   </div>
 </div>
 
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
-  import { getAllAttempts, getAllQuizzes } from "../js/data.js";
+  import { getAllAttempts, getAllQuizzes, getQuiz } from "../js/data.js";
 
   renderAdminNav("results.html");
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
 
   const attempts = await getAllAttempts();
   const quizzes = await getAllQuizzes();
@@ -39,16 +56,16 @@
 
   const body = document.getElementById("results-body");
   if (attempts.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="hint">এখনও কোনো অংশগ্রহণ নেই।</td></tr>`;
   }
   attempts.forEach(a => {
     const quiz = quizById[a.quizId];
     const when = a.startedAt ? new Date(a.startedAt).toLocaleString("bn-BD") : "—";
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${a.student?.name || "—"}</td>
-      <td>${a.student?.cls || "—"} / ${a.student?.phone || a.student?.roll || "—"}</td>
-      <td>${quiz ? quiz.title_bn : a.quizId}</td>
+      <td>${escapeHtml(a.student?.name || "—")}</td>
+      <td>${escapeHtml(a.student?.cls || "—")} / ${escapeHtml(a.student?.phone || a.student?.roll || "—")}</td>
+      <td>${quiz ? escapeHtml(quiz.title_bn) : escapeHtml(a.quizId)}</td>
       <td>${a.score !== undefined ? `${a.score}/${a.total}` : "চলমান"}</td>
       <td>${a.status === "ended-early"
         ? '<span class="pill warn">সময়ের আগে বন্ধ</span>'
@@ -56,9 +73,41 @@
           ? '<span class="pill ok">সম্পন্ন</span>'
           : '<span class="hint">চলমান</span>'}</td>
       <td class="hint">${when}</td>
+      <td><button class="btn btn-outline" data-detail="${a.id}" style="padding:6px 12px; font-size:.78rem;">উত্তর দেখো</button></td>
     `;
     body.appendChild(tr);
   });
+
+  const overlay = document.getElementById("detail-overlay");
+  const detailBody = document.getElementById("detail-body");
+  const detailTitle = document.getElementById("detail-title");
+
+  body.querySelectorAll("[data-detail]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const attempt = attempts.find(a => a.id === btn.dataset.detail);
+      if (!attempt) return;
+      const quiz = quizById[attempt.quizId] || await getQuiz(attempt.quizId);
+      if (!quiz) return;
+
+      detailTitle.textContent = `${attempt.student?.name || "—"} — ${quiz.title_bn}`;
+      const labels = ["ক", "খ", "গ", "ঘ"];
+      detailBody.innerHTML = (quiz.questions || []).map((q, i) => {
+        const given = attempt.answers?.[q.id];
+        const correct = given === q.correctIndex;
+        return `
+          <div class="review-item">
+            <div class="q">${i + 1}. ${escapeHtml(q.text_bn)}</div>
+            <div class="hint">শিক্ষার্থীর উত্তর: ${given !== undefined ? labels[given] + ". " + escapeHtml(q.options_bn[given]) : "উত্তর দেয়নি"}</div>
+            ${!correct ? `<div class="hint">সঠিক উত্তর: ${labels[q.correctIndex]}. ${escapeHtml(q.options_bn[q.correctIndex])}</div>` : ""}
+            <span class="mark ${correct ? "correct" : "wrong"}">${correct ? "সঠিক" : "ভুল"}</span>
+          </div>
+        `;
+      }).join("");
+      overlay.classList.add("show");
+    });
+  });
+
+  document.getElementById("detail-close-btn").addEventListener("click", () => overlay.classList.remove("show"));
 </script>
 </body>
 </html>
