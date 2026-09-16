@@ -11,9 +11,10 @@
 <header class="site-header">
   <div class="shell">
     <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
-    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra">
-      <a href="admin/login.html" class="hint" data-i18n="adminLogin">Admin Login</a>
-    </nav>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
+  </div>
+  <div class="shell">
+    <nav class="main-menu" id="main-menu"></nav>
   </div>
 </header>
 
@@ -25,7 +26,6 @@
       <p data-i18n="heroDesc">Take subject-wise quizzes and model tests to check your preparation. No sign-up needed — enter your name and class and start right away.</p>
       <div class="actions">
         <a href="#subjects" class="btn btn-primary" data-i18n="startExamBtn">Start an exam</a>
-        <a href="admin/login.html" class="btn btn-outline" data-i18n="adminAddBtn">Add questions (Admin)</a>
       </div>
     </section>
 
@@ -49,14 +49,14 @@
 
 <script type="module">
   import { applyI18n, t } from "./js/i18n.js";
-  import { renderSiteNavExtras } from "./js/site-header.js";
+  import { applyTheme } from "./js/theme.js";
+  import { renderSiteNavExtras, renderMainMenu } from "./js/site-header.js";
   import { getSubjects } from "./js/data.js";
 
+  applyTheme();
   applyI18n();
-  const nav = document.getElementById("nav-extra");
-  const adminLink = nav.firstElementChild;
-  renderSiteNavExtras(nav);
-  nav.insertBefore(adminLink, nav.firstChild);
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+  renderMainMenu(document.getElementById("main-menu"));
 
   const grid = document.getElementById("subject-grid");
   try {
