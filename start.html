@@ -48,7 +48,7 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getQuiz, hasAttempted, startAttempt } from "./js/data.js";
+  import { getQuiz, hasAttempted, startAttempt, getExamWindowStatus } from "./js/data.js";
   import { watchStudentAuth, getStudentProfile } from "./js/student-auth.js";
 
   applyTheme();
@@ -70,10 +70,20 @@
       `${t("duration")}: ${Math.floor(quiz.durationSeconds / 60)} ${t("minutes")} · ${t("questions")}: ${(quiz.questions || []).length}`;
 
     const locked = hasAttempted(quizId);
-    if (locked) {
+    const windowStatus = getExamWindowStatus(quiz);
+
+    if (windowStatus === "not_started") {
+      err.textContent = `${t("examStartsAt")} ${new Date(quiz.examStartAt).toLocaleString()}`;
+      err.classList.add("show");
+    } else if (windowStatus === "closed") {
+      err.textContent = t("examClosed");
+      err.classList.add("show");
+    } else if (locked) {
       err.textContent = t("alreadyAttemptedMsg");
       err.classList.add("show");
     }
+
+    const windowBlocked = windowStatus !== "open";
 
     let studentProfile = null;
     let studentUid = null;
@@ -83,17 +93,26 @@
         studentUid = user.uid;
         studentProfile = await getStudentProfile(user.uid);
         guestForm.style.display = "none";
-        signedInCard.style.display = locked ? "none" : "block";
+
+        const profileIncomplete = !studentProfile?.cls || !studentProfile?.phone;
+        if (profileIncomplete && !locked && !windowBlocked) {
+          signedInCard.style.display = "none";
+          err.innerHTML = `${t("completeProfileFirst")} <a href="profile.html">${t("goToProfile")}</a>`;
+          err.classList.add("show");
+        } else {
+          signedInCard.style.display = (locked || windowBlocked) ? "none" : "block";
+        }
         document.getElementById("signed-in-line").textContent =
           `${t("signedInAs")} ${studentProfile?.name || user.email} (${studentProfile?.cls || ""})`;
       } else {
         signedInCard.style.display = "none";
-        guestForm.style.display = locked ? "none" : "block";
+        guestForm.style.display = (locked || windowBlocked) ? "none" : "block";
       }
     });
 
     document.getElementById("signed-in-start-btn")?.addEventListener("click", () => {
-      if (hasAttempted(quizId)) return;
+      if (hasAttempted(quizId) || getExamWindowStatus(quiz) !== "open") return;
+      if (!studentProfile?.cls || !studentProfile?.phone) return;
       const student = {
         name: studentProfile?.name || "",
         cls: studentProfile?.cls || "",
@@ -107,7 +126,7 @@
 
     guestForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (hasAttempted(quizId)) return;
+      if (hasAttempted(quizId) || getExamWindowStatus(quiz) !== "open") return;
       const student = {
         name: document.getElementById("name").value.trim(),
         cls: document.getElementById("cls").value.trim(),
