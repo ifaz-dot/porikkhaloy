@@ -21,21 +21,54 @@
 
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস / ফোন</th><th>স্কোর</th><th>সময়</th><th>জমার সময়</th></tr></thead>
+        <thead><tr><th style="width:50px;">র‍্যাঙ্ক</th><th>নাম</th><th>ক্লাস / ফোন</th><th>স্কোর</th><th>সময়</th><th>জমার সময়</th><th style="width:140px;"></th></tr></thead>
         <tbody id="board-body"></tbody>
       </table>
     </div>
   </div>
 </div>
 
+<!-- Edit leaderboard entry overlay -->
+<div class="overlay" id="entry-overlay">
+  <div class="overlay-box" style="max-width:480px; text-align:left; border-top-color:var(--indigo);">
+    <h2 style="color:var(--indigo);">এন্ট্রি সম্পাদনা করো</h2>
+    <div class="field"><label>নাম</label><input type="text" id="e-name"></div>
+    <div class="field"><label>ক্লাস</label><input type="text" id="e-cls"></div>
+    <div class="field"><label>ফোন / রোল</label><input type="text" id="e-phone"></div>
+    <div style="display:flex; gap:10px;">
+      <div class="field" style="flex:1;"><label>স্কোর</label><input type="number" id="e-score" min="0"></div>
+      <div class="field" style="flex:1;"><label>মোট</label><input type="number" id="e-total" min="0"></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <div class="field" style="flex:1;"><label>সময় (মিনিট)</label><input type="number" id="e-min" min="0"></div>
+      <div class="field" style="flex:1;"><label>সময় (সেকেন্ড)</label><input type="number" id="e-sec" min="0" max="59"></div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btn btn-primary" id="e-save-btn">সংরক্ষণ করো</button>
+      <button class="btn btn-outline" id="e-cancel-btn" type="button">বাতিল</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
-  import { getSubjects, getQuizzesBySubject, getLeaderboard } from "../js/data.js";
+  import { getSubjects, getQuizzesBySubject, getLeaderboard, updateAttempt, deleteAttempt } from "../js/data.js";
 
   renderAdminNav("leaderboard.html");
 
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
   const select = document.getElementById("quiz-select");
   const body = document.getElementById("board-body");
+  const overlay = document.getElementById("entry-overlay");
+
+  let currentBoard = [];
+  let currentQuizId = null;
+  let editingEntry = null;
 
   try {
     const subjects = await getSubjects();
@@ -47,25 +80,30 @@
 
     if (allQuizzes.length === 0) {
       select.innerHTML = `<option>কোনো পরীক্ষা নেই</option>`;
-      body.innerHTML = `<tr><td colspan="6" class="hint">কোনো পরীক্ষা তৈরি করা হয়নি।</td></tr>`;
+      body.innerHTML = `<tr><td colspan="7" class="hint">কোনো পরীক্ষা তৈরি করা হয়নি।</td></tr>`;
     } else {
-      select.innerHTML = allQuizzes.map(q => `<option value="${q.id}">${q.subjectName} — ${q.title_bn}</option>`).join("");
-      await renderBoard(allQuizzes[0].id);
+      select.innerHTML = allQuizzes.map(q => `<option value="${q.id}">${escapeHtml(q.subjectName)} — ${escapeHtml(q.title_bn)}</option>`).join("");
+      currentQuizId = allQuizzes[0].id;
+      await renderBoard(currentQuizId);
     }
 
-    select.addEventListener("change", (e) => renderBoard(e.target.value));
+    select.addEventListener("change", (e) => {
+      currentQuizId = e.target.value;
+      renderBoard(currentQuizId);
+    });
   } catch (e) {
     console.error("Leaderboard load error:", e);
-    body.innerHTML = `<tr><td colspan="6" class="hint" style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${e.message}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="hint" style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${escapeHtml(e.message)}</td></tr>`;
   }
 
   async function renderBoard(quizId) {
-    body.innerHTML = `<tr><td colspan="6" class="hint">লোড হচ্ছে…</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="hint">লোড হচ্ছে…</td></tr>`;
     try {
       const board = await getLeaderboard(quizId);
+      currentBoard = board;
       body.innerHTML = "";
       if (board.length === 0) {
-        body.innerHTML = `<tr><td colspan="6" class="hint">এখনও কেউ এই পরীক্ষা সম্পন্ন করেনি।</td></tr>`;
+        body.innerHTML = `<tr><td colspan="7" class="hint">এখনও কেউ এই পরীক্ষা সম্পন্ন করেনি।</td></tr>`;
         return;
       }
       board.forEach((a, i) => {
@@ -75,19 +113,75 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
-          <td>${a.student?.name || "—"}</td>
-          <td class="hint">${a.student?.cls || "—"} / ${a.student?.phone || a.student?.roll || "—"}</td>
+          <td>${escapeHtml(a.student?.name || "—")}</td>
+          <td class="hint">${escapeHtml(a.student?.cls || "—")} / ${escapeHtml(a.student?.phone || a.student?.roll || "—")}</td>
           <td>${a.score}/${a.total}</td>
           <td class="hint">${m}ম ${s}সে</td>
           <td class="hint">${when}</td>
+          <td style="display:flex; gap:6px;">
+            <button class="btn btn-outline" data-edit-entry="${a.id}" style="padding:5px 10px; font-size:.75rem;">সম্পাদনা</button>
+            <button class="btn btn-outline" data-del-entry="${a.id}" style="padding:5px 10px; font-size:.75rem;">মুছো</button>
+          </td>
         `;
         body.appendChild(tr);
       });
+
+      body.querySelectorAll("[data-edit-entry]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const entry = currentBoard.find(a => a.id === btn.dataset.editEntry);
+          if (!entry) return;
+          openEditForm(entry);
+        });
+      });
+      body.querySelectorAll("[data-del-entry]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("এই এন্ট্রিটি লিডারবোর্ড থেকে মুছে ফেলা হবে। নিশ্চিত?")) return;
+          await deleteAttempt(btn.dataset.delEntry);
+          await renderBoard(currentQuizId);
+        });
+      });
     } catch (e) {
       console.error("Leaderboard render error:", e);
-      body.innerHTML = `<tr><td colspan="6" class="hint" style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${e.message}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="7" class="hint" style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${escapeHtml(e.message)}</td></tr>`;
     }
   }
+
+  function openEditForm(entry) {
+    editingEntry = entry;
+    document.getElementById("e-name").value = entry.student?.name || "";
+    document.getElementById("e-cls").value = entry.student?.cls || "";
+    document.getElementById("e-phone").value = entry.student?.phone || entry.student?.roll || "";
+    document.getElementById("e-score").value = entry.score ?? 0;
+    document.getElementById("e-total").value = entry.total ?? 0;
+    document.getElementById("e-min").value = Math.floor(entry.durationSeconds / 60);
+    document.getElementById("e-sec").value = entry.durationSeconds % 60;
+    overlay.classList.add("show");
+  }
+
+  document.getElementById("e-cancel-btn").addEventListener("click", () => overlay.classList.remove("show"));
+  document.getElementById("e-save-btn").addEventListener("click", async () => {
+    if (!editingEntry) return;
+    const name = document.getElementById("e-name").value.trim();
+    const cls = document.getElementById("e-cls").value.trim();
+    const phone = document.getElementById("e-phone").value.trim();
+    const score = parseInt(document.getElementById("e-score").value, 10) || 0;
+    const total = parseInt(document.getElementById("e-total").value, 10) || 0;
+    const minutes = parseInt(document.getElementById("e-min").value, 10) || 0;
+    const seconds = parseInt(document.getElementById("e-sec").value, 10) || 0;
+
+    const newEndedAt = editingEntry.startedAt + (minutes * 60 + seconds) * 1000;
+
+    await updateAttempt(editingEntry.id, {
+      student: { ...editingEntry.student, name, cls, phone },
+      score,
+      total,
+      endedAt: newEndedAt,
+    });
+
+    overlay.classList.remove("show");
+    editingEntry = null;
+    await renderBoard(currentQuizId);
+  });
 </script>
 </body>
 </html>
