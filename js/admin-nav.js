@@ -10,6 +10,7 @@ export function renderAdminNav(active) {
     const items = [
       ["dashboard.html", "ড্যাশবোর্ড"],
       ["questions.html", "প্রশ্ন ব্যাংক"],
+      ["classes.html", "ক্লাস"],
       ["results.html", "ফলাফল ও অংশগ্রহণ"],
       ["leaderboard.html", "লিডারবোর্ড"],
       ["students.html", "শিক্ষার্থী"],
