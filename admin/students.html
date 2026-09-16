@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>শিক্ষার্থী — অ্যাডমিন</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="admin">
+
+<div class="admin-shell">
+  <nav class="admin-nav" id="admin-nav"></nav>
+  <div class="admin-main">
+    <h1>শিক্ষার্থী (সাইন-আপকৃত)</h1>
+    <p class="hint">যাদের "isPaid" চেক করা থাকবে তারা কোর্স সেকশন দেখতে পাবে।</p>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>নাম</th><th>ইমেইল</th><th>ক্লাস</th><th>ফোন</th><th style="width:100px;">পেইড</th></tr></thead>
+        <tbody id="students-body"><tr><td colspan="5" class="hint">লোড হচ্ছে…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderAdminNav } from "../js/admin-nav.js";
+  import { db } from "../js/firebase-config.js";
+  import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  renderAdminNav("students.html");
+
+  const body = document.getElementById("students-body");
+  try {
+    const snap = await getDocs(collection(db, "students"));
+    const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    body.innerHTML = "";
+    if (students.length === 0) {
+      body.innerHTML = `<tr><td colspan="5" class="hint">এখনও কেউ সাইন-আপ করেনি।</td></tr>`;
+    }
+    students.forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.name || "—"}</td>
+        <td class="hint">${s.email || "—"}</td>
+        <td>${s.cls || "—"}</td>
+        <td>${s.phone || "—"}</td>
+        <td><input type="checkbox" data-uid="${s.id}" ${s.isPaid ? "checked" : ""}></td>
+      `;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll("input[type=checkbox]").forEach(cb => {
+      cb.addEventListener("change", async () => {
+        await updateDoc(doc(db, "students", cb.dataset.uid), { isPaid: cb.checked });
+      });
+    });
+  } catch (e) {
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="5" class="hint" style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${e.message}</td></tr>`;
+  }
+</script>
+</body>
+</html>
