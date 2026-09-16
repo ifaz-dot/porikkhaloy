@@ -18,7 +18,10 @@
 <main>
   <div class="shell" style="max-width:720px;">
     <section class="block">
-      <h2 id="quiz-title" data-i18n="leaderboardTitle">Leaderboard</h2>
+      <div class="toolbar">
+        <h2 id="quiz-title" data-i18n="leaderboardTitle" style="margin:0;">Leaderboard</h2>
+        <select id="quiz-select" style="padding:8px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); background:#fff; font-family:inherit; max-width:100%;"></select>
+      </div>
       <p class="hint" style="margin-bottom:24px;" data-i18n="leaderboardDesc">Ranked by score. On a tie, faster submission ranks higher.</p>
 
       <div style="overflow-x:auto;">
@@ -43,36 +46,63 @@
 
 <script type="module">
   import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getQuiz, getLeaderboard } from "./js/data.js";
+  import { getSubjects, getQuizzesBySubject, getQuiz, getLeaderboard } from "./js/data.js";
 
+  applyTheme();
   applyI18n();
   renderSiteNavExtras(document.getElementById("nav-extra"));
 
-  const quizId = new URLSearchParams(location.search).get("quiz");
+  const select = document.getElementById("quiz-select");
   const body = document.getElementById("board-body");
+  const titleEl = document.getElementById("quiz-title");
 
-  const quiz = await getQuiz(quizId);
-  document.getElementById("quiz-title").textContent = quiz ? `${t("leaderboardTitle")} — ${quiz.title_bn}` : t("leaderboardTitle");
-
-  const board = await getLeaderboard(quizId);
-  body.innerHTML = "";
-  if (board.length === 0) {
-    body.innerHTML = `<tr><td colspan="5" class="hint">${t("noOneYet")}</td></tr>`;
+  const subjects = await getSubjects();
+  const allQuizzes = [];
+  for (const s of subjects) {
+    const quizzes = await getQuizzesBySubject(s.id);
+    quizzes.forEach(q => allQuizzes.push({ ...q, subjectName: s.name_bn }));
   }
-  board.forEach((a, i) => {
-    const m = Math.floor(a.durationSeconds / 60);
-    const s = a.durationSeconds % 60;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
-      <td>${a.student?.name || "—"}</td>
-      <td class="hint">${a.student?.cls || "—"}</td>
-      <td>${a.score}/${a.total}</td>
-      <td class="hint">${m}m ${s}s</td>
-    `;
-    body.appendChild(tr);
-  });
+
+  const urlQuizId = new URLSearchParams(location.search).get("quiz");
+
+  if (allQuizzes.length === 0) {
+    select.style.display = "none";
+    body.innerHTML = `<tr><td colspan="5" class="hint">${t("noOneYet")}</td></tr>`;
+  } else {
+    select.innerHTML = allQuizzes.map(q => `<option value="${q.id}">${q.subjectName} — ${q.title_bn}</option>`).join("");
+    const initialId = urlQuizId && allQuizzes.some(q => q.id === urlQuizId) ? urlQuizId : allQuizzes[0].id;
+    select.value = initialId;
+    await renderBoard(initialId);
+    select.addEventListener("change", (e) => renderBoard(e.target.value));
+  }
+
+  async function renderBoard(quizId) {
+    body.innerHTML = `<tr><td colspan="5" class="hint">${t("loading")}</td></tr>`;
+    const quiz = await getQuiz(quizId);
+    titleEl.textContent = quiz ? `${t("leaderboardTitle")} — ${quiz.title_bn}` : t("leaderboardTitle");
+
+    const board = await getLeaderboard(quizId);
+    body.innerHTML = "";
+    if (board.length === 0) {
+      body.innerHTML = `<tr><td colspan="5" class="hint">${t("noOneYet")}</td></tr>`;
+      return;
+    }
+    board.forEach((a, i) => {
+      const m = Math.floor(a.durationSeconds / 60);
+      const s = a.durationSeconds % 60;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:600; color:${i < 3 ? "var(--mustard)" : "inherit"};">${i + 1}</td>
+        <td>${a.student?.name || "—"}</td>
+        <td class="hint">${a.student?.cls || "—"}</td>
+        <td>${a.score}/${a.total}</td>
+        <td class="hint">${m}m ${s}s</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
 </script>
 </body>
 </html>
