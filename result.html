@@ -38,9 +38,11 @@
 
 <script type="module">
   import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
   import { getAttempt, getQuiz } from "./js/data.js";
 
+  applyTheme();
   applyI18n();
   renderSiteNavExtras(document.getElementById("nav-extra"));
 
