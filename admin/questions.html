@@ -72,11 +72,25 @@
   </div>
 </div>
 
+<!-- Schedule overlay -->
+<div class="overlay" id="schedule-overlay">
+  <div class="overlay-box" style="max-width:460px; text-align:left; border-top-color:var(--indigo);">
+    <h2 style="color:var(--indigo);">পরীক্ষার সময়সূচী</h2>
+    <div class="field"><label>পরীক্ষা শুরু</label><input type="datetime-local" id="sch-start"></div>
+    <div class="field"><label>পরীক্ষা শেষ / জমাদানের শেষ সময়</label><input type="datetime-local" id="sch-end"></div>
+    <p class="hint" style="margin-bottom:10px;">খালি রাখলে সেই সীমা প্রযোজ্য হবে না। শুরুর আগে কেউ পরীক্ষা শুরু করতে পারবে না; শেষ সময়ের পর নতুন করে শুরু করা বা চলমান পরীক্ষা জমা দেওয়া — দুটোই বন্ধ হয়ে যাবে (চলমান পরীক্ষা তখন স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে)।</p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" id="sch-save-btn">সংরক্ষণ করো</button>
+      <button class="btn btn-outline" id="sch-cancel-btn" type="button">বাতিল</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { renderAdminNav } from "../js/admin-nav.js";
   import {
     getSubjects, addSubject, updateSubject, deleteSubject,
-    getQuizzesBySubject, addQuiz, deleteQuiz,
+    getQuizzesBySubject, addQuiz, deleteQuiz, updateQuizSchedule,
     addQuestionToQuiz, addQuestionsToQuiz, updateQuestionInQuiz,
     deleteQuestionFromQuiz, parseQuestionCSV
   } from "../js/data.js";
@@ -192,10 +206,14 @@
     quizzes.forEach(quiz => {
       const wrap = document.createElement("div");
       wrap.style.marginBottom = "32px";
+      const scheduleText = quiz.examStartAt || quiz.examEndAt
+        ? `<span class="hint">সময়সূচী: ${quiz.examStartAt ? new Date(quiz.examStartAt).toLocaleString("bn-BD") : "—"} থেকে ${quiz.examEndAt ? new Date(quiz.examEndAt).toLocaleString("bn-BD") : "—"} পর্যন্ত</span>`
+        : `<span class="hint">কোনো সময়সূচী নির্ধারিত নেই (সবসময় খোলা)</span>`;
       wrap.innerHTML = `
-        <div class="toolbar" style="margin-bottom:14px;">
+        <div class="toolbar" style="margin-bottom:6px;">
           <h2 style="font-size:1.05rem; margin:0;">${escapeHtml(quiz.title_bn)}</h2>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-outline" data-schedule-q="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">সময়সূচী নির্ধারণ</button>
             <button class="btn btn-primary" data-add-q="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">+ প্রশ্ন যোগ করো</button>
             <label class="btn btn-outline" style="padding:8px 14px; font-size:.85rem; cursor:pointer;">
               CSV ইমপোর্ট
@@ -204,6 +222,7 @@
             <button class="btn btn-outline" data-del-quiz="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">পরীক্ষা মুছো</button>
           </div>
         </div>
+        <div style="margin-bottom:14px;">${scheduleText}</div>
         <table>
           <thead><tr><th style="width:44px;">#</th><th>প্রশ্ন</th><th style="width:140px;">সঠিক উত্তর</th><th style="width:140px;"></th></tr></thead>
           <tbody>
@@ -226,6 +245,12 @@
       container.appendChild(wrap);
     });
 
+    container.querySelectorAll("[data-schedule-q]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const quiz = quizzes.find(q => q.id === btn.dataset.scheduleQ);
+        openScheduleForm(quiz);
+      });
+    });
     container.querySelectorAll("[data-add-q]").forEach(btn => {
       btn.addEventListener("click", () => {
         currentQuizIdForForm = btn.dataset.addQ;
@@ -282,14 +307,23 @@
       <h3 style="font-size:1rem;">এই বিষয়ে নতুন পরীক্ষা যোগ করো</h3>
       <div class="field"><label>পরীক্ষার শিরোনাম</label><input type="text" id="new-quiz-title" placeholder="যেমন: মডেল টেস্ট ২"></div>
       <div class="field"><label>সময়সীমা (মিনিট)</label><input type="number" id="new-quiz-duration" value="10" min="1"></div>
+      <div class="field"><label>পরীক্ষা শুরু (ঐচ্ছিক)</label><input type="datetime-local" id="new-quiz-start"></div>
+      <div class="field"><label>পরীক্ষা শেষ / জমাদানের শেষ সময় (ঐচ্ছিক)</label><input type="datetime-local" id="new-quiz-end"></div>
+      <p class="hint" style="margin-bottom:14px;">খালি রাখলে পরীক্ষাটি সবসময় খোলা থাকবে।</p>
       <button class="btn btn-mustard" id="new-quiz-btn">পরীক্ষা তৈরি করো</button>
     `;
     container.appendChild(addQuizWrap);
     document.getElementById("new-quiz-btn").addEventListener("click", async () => {
       const title_bn = document.getElementById("new-quiz-title").value.trim();
       const minutes = parseInt(document.getElementById("new-quiz-duration").value, 10) || 10;
+      const startVal = document.getElementById("new-quiz-start").value;
+      const endVal = document.getElementById("new-quiz-end").value;
       if (!title_bn) { alert("পরীক্ষার শিরোনাম আবশ্যক।"); return; }
-      await addQuiz({ subjectId: activeSubjectId, title_bn, type: "exam", durationSeconds: minutes * 60 });
+      await addQuiz({
+        subjectId: activeSubjectId, title_bn, type: "exam", durationSeconds: minutes * 60,
+        examStartAt: startVal ? new Date(startVal).getTime() : null,
+        examEndAt: endVal ? new Date(endVal).getTime() : null,
+      });
       await renderQuizArea();
       await loadSubjects();
     });
@@ -320,6 +354,39 @@
       await addQuestionToQuiz(currentQuizIdForForm, { text_bn, options_bn, correctIndex, explanation_bn });
     }
     qOverlay.classList.remove("show");
+    await renderQuizArea();
+  });
+
+  /* ---------------- schedule overlay ---------------- */
+  const schOverlay = document.getElementById("schedule-overlay");
+  let scheduleQuizId = null;
+
+  function toLocalInputValue(ms) {
+    if (!ms) return "";
+    const d = new Date(ms);
+    const pad = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function openScheduleForm(quiz) {
+    scheduleQuizId = quiz.id;
+    document.getElementById("sch-start").value = toLocalInputValue(quiz.examStartAt);
+    document.getElementById("sch-end").value = toLocalInputValue(quiz.examEndAt);
+    schOverlay.classList.add("show");
+  }
+  document.getElementById("sch-cancel-btn").addEventListener("click", () => schOverlay.classList.remove("show"));
+  document.getElementById("sch-save-btn").addEventListener("click", async () => {
+    const startVal = document.getElementById("sch-start").value;
+    const endVal = document.getElementById("sch-end").value;
+    if (startVal && endVal && new Date(startVal).getTime() >= new Date(endVal).getTime()) {
+      alert("শেষ সময় অবশ্যই শুরুর সময়ের পরে হতে হবে।");
+      return;
+    }
+    await updateQuizSchedule(scheduleQuizId, {
+      examStartAt: startVal ? new Date(startVal).getTime() : null,
+      examEndAt: endVal ? new Date(endVal).getTime() : null,
+    });
+    schOverlay.classList.remove("show");
     await renderQuizArea();
   });
 
