@@ -40,15 +40,18 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getAttempt, getQuiz } from "./js/data.js";
+  import { getAttempt, getAttemptByFirestoreId, getQuiz } from "./js/data.js";
 
   applyTheme();
   applyI18n();
   renderSiteNavExtras(document.getElementById("nav-extra"));
 
   const labels = localStorage.getItem("site_lang") === "bn" ? ["ক","খ","গ","ঘ","ঙ"] : ["A","B","C","D","E"];
-  const attemptId = new URLSearchParams(location.search).get("attempt");
-  const attempt = getAttempt(attemptId);
+  const params = new URLSearchParams(location.search);
+  const fbid = params.get("fbid");
+  const attemptId = params.get("attempt");
+
+  const attempt = fbid ? await getAttemptByFirestoreId(fbid) : getAttempt(attemptId);
 
   if (!attempt || attempt.score === undefined) {
     document.querySelector("main .shell").innerHTML = `<p>${t("resultNotFound")}</p>`;
