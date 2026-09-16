@@ -45,8 +45,10 @@
 
 <script type="module">
   import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
   import { getQuiz, getAttempt, saveAttempt, finalizeAttempt } from "./js/data.js";
 
+  applyTheme();
   applyI18n();
 
   const attemptId = new URLSearchParams(location.search).get("attempt");
