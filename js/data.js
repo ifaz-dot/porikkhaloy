@@ -162,6 +162,14 @@ export async function getAllAttempts() {
     .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
 }
 
+export async function updateAttempt(id, updatedFields) {
+  return updateDoc(doc(db, "attempts", id), updatedFields);
+}
+
+export async function deleteAttempt(id) {
+  return deleteDoc(doc(db, "attempts", id));
+}
+
 export async function getLeaderboard(quizId) {
   const q = query(collection(db, "attempts"), where("quizId", "==", quizId));
   const snap = await getDocs(q);
