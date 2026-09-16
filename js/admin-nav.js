@@ -12,6 +12,7 @@ export function renderAdminNav(active) {
       ["questions.html", "প্রশ্ন ব্যাংক"],
       ["results.html", "ফলাফল ও অংশগ্রহণ"],
       ["leaderboard.html", "লিডারবোর্ড"],
+      ["students.html", "শিক্ষার্থী"],
     ];
     const nav = document.getElementById("admin-nav");
     nav.innerHTML = `<a href="../index.html" class="brand"><span class="brand-bn">পরীক্ষালয়</span></a>` +
