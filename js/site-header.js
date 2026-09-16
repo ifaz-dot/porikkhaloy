@@ -30,9 +30,10 @@ export function renderSiteNavExtras(navEl) {
 // should show it (currently: index.html).
 export function renderMainMenu(el) {
   const baseLinks = [
-    [`index.html#subjects`, t("navClasses")],
+    [`classes.html`, t("navClasses")],
     [`index.html#subjects`, t("navExams")],
     [`leaderboard.html`, t("navLeaderboard")],
+    [`find-result.html`, t("navFindResult")],
   ];
 
   el.innerHTML = baseLinks.map(([href, label]) => `<a href="${href}">${label}</a>`).join("");
