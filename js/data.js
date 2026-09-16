@@ -127,6 +127,62 @@ export async function deleteQuestionFromQuiz(quizId, questionId) {
   return updateDoc(doc(db, "quizzes", quizId), { questions });
 }
 
+export async function getAttemptByFirestoreId(id) {
+  const snap = await getDoc(doc(db, "attempts", id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function getAttemptsByPhone(phone) {
+  const q = query(collection(db, "attempts"), where("student.phone", "==", phone));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(a => a.score !== undefined)
+    .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+}
+
+/* ---------------- classes (YouTube / linked video content) ---------------- */
+
+export async function getClassesBySubject(subjectId) {
+  const q = query(collection(db, "classes"), where("subjectId", "==", subjectId));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+export async function getAllClasses() {
+  const snap = await getDocs(collection(db, "classes"));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+export async function addClass({ subjectId, title_bn, url }) {
+  return addDoc(collection(db, "classes"), { subjectId, title_bn, url, createdAt: Date.now() });
+}
+
+export async function deleteClass(id) {
+  return deleteDoc(doc(db, "classes", id));
+}
+
+// Turns a pasted URL (YouTube, Google Drive, or a direct video file link)
+// into embeddable player HTML. No file upload involved — admin pastes a
+// link to content hosted elsewhere (YouTube, Drive, etc.), which keeps
+// this free (real file hosting needs paid storage).
+export function renderVideoEmbed(url) {
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+  if (yt) {
+    return `<iframe width="100%" height="360" src="https://www.youtube.com/embed/${yt[1]}" title="class video" frameborder="0" allowfullscreen style="border-radius:var(--radius); background:#000;"></iframe>`;
+  }
+  const drive = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  if (drive) {
+    return `<iframe width="100%" height="360" src="https://drive.google.com/file/d/${drive[1]}/preview" allowfullscreen style="border-radius:var(--radius); background:#000;"></iframe>`;
+  }
+  // Fallback: assume a direct video file URL (.mp4 etc.)
+  return `<video controls style="width:100%; max-height:420px; border-radius:var(--radius); background:#000;"><source src="${url}"></video>`;
+}
+
 /* ---- CSV import helper ----
    Expected format per line, comma-separated, no header needed:
    প্রশ্ন,অপশন১,অপশন২,অপশন৩,অপশন৪,সঠিক_ইনডেক্স(０-৩),ব্যাখ্যা(ঐচ্ছিক)
