@@ -11,7 +11,8 @@
   Firestore shape:
     subjects/{id}            -> { name_bn, name_en, desc_bn }
     quizzes/{id}             -> { subjectId, title_bn, type,
-                                   durationSeconds,
+                                   durationSeconds, examStartAt,
+                                   examEndAt,
                                    questions: [ { id, text_bn,
                                      options_bn: [...], correctIndex } ] }
 */
@@ -67,12 +68,29 @@ export async function getQuiz(quizId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-export async function addQuiz({ subjectId, title_bn, type, durationSeconds }) {
+export async function addQuiz({ subjectId, title_bn, type, durationSeconds, examStartAt, examEndAt }) {
   return addDoc(collection(db, "quizzes"), {
     subjectId, title_bn, type: type || "exam",
     durationSeconds: durationSeconds || 600,
+    examStartAt: examStartAt || null,
+    examEndAt: examEndAt || null,
     questions: []
   });
+}
+
+export async function updateQuizSchedule(quizId, { examStartAt, examEndAt }) {
+  return updateDoc(doc(db, "quizzes", quizId), {
+    examStartAt: examStartAt || null,
+    examEndAt: examEndAt || null,
+  });
+}
+
+export function getExamWindowStatus(quiz) {
+  const now = Date.now();
+  if (!quiz.examStartAt && !quiz.examEndAt) return "open";
+  if (quiz.examStartAt && now < quiz.examStartAt) return "not_started";
+  if (quiz.examEndAt && now > quiz.examEndAt) return "closed";
+  return "open";
 }
 
 export async function deleteQuiz(id) {
