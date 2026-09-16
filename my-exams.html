@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Exams — Porikkhaloy</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell" style="max-width:720px;">
+    <section class="block">
+      <h2 data-i18n="myExamsTitle">My Exams</h2>
+      <p class="hint" style="margin-bottom:24px;" data-i18n="myExamsDesc">Your exam history and scores.</p>
+
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Exam</th><th>Score</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="rows-body"><tr><td colspan="4" class="hint" data-i18n="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
+  import { watchStudentAuth } from "./js/student-auth.js";
+  import { getAllAttempts, getQuiz } from "./js/data.js";
+
+  applyTheme();
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+
+  const body = document.getElementById("rows-body");
+
+  watchStudentAuth(async (user) => {
+    if (!user) {
+      location.href = "student-login.html";
+      return;
+    }
+    const all = await getAllAttempts();
+    const mine = all.filter(a => a.student?.uid === user.uid);
+
+    body.innerHTML = "";
+    if (mine.length === 0) {
+      body.innerHTML = `<tr><td colspan="4" class="hint">${t("noAttemptsYet")}</td></tr>`;
+      return;
+    }
+    for (const a of mine) {
+      const quiz = await getQuiz(a.quizId);
+      const when = a.startedAt ? new Date(a.startedAt).toLocaleDateString() : "—";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${quiz ? quiz.title_bn : a.quizId}</td>
+        <td>${a.score !== undefined ? `${a.score}/${a.total}` : "—"}</td>
+        <td>${a.status === "ended-early"
+          ? `<span class="pill warn">${t("endedEarly")}</span>`
+          : `<span class="pill ok">${t("completed")}</span>`}</td>
+        <td class="hint">${when}</td>
+      `;
+      body.appendChild(tr);
+    }
+  });
+</script>
+</body>
+</html>
