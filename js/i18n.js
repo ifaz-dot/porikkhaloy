@@ -90,6 +90,20 @@ const translations = {
     profileDesc: "Keep your info up to date.",
     saveChanges: "Save changes",
     saved: "Saved.",
+
+    navClasses: "Classes",
+    navExams: "Exams",
+    navLeaderboard: "Leaderboard",
+    navMyExams: "My Exams",
+    navCourses: "Courses",
+    selectExamForBoard: "Select an exam to view its leaderboard",
+    myExamsTitle: "My Exams",
+    myExamsDesc: "Your exam history and scores.",
+    noAttemptsYet: "You haven't taken any exams yet.",
+    coursesTitle: "Courses",
+    coursesLockedTitle: "Paid courses",
+    coursesLockedDesc: "This section is available to students with an active course purchase. Contact the admin to get access.",
+    coursesComingSoon: "Course content will appear here once available.",
   },
   bn: {
     brand: "পরীক্ষালয়",
@@ -177,6 +191,20 @@ const translations = {
     profileDesc: "তোমার তথ্য হালনাগাদ রাখো।",
     saveChanges: "পরিবর্তন সংরক্ষণ করো",
     saved: "সংরক্ষিত হয়েছে।",
+
+    navClasses: "ক্লাস",
+    navExams: "পরীক্ষা",
+    navLeaderboard: "লিডারবোর্ড",
+    navMyExams: "আমার পরীক্ষাসমূহ",
+    navCourses: "কোর্স",
+    selectExamForBoard: "লিডারবোর্ড দেখতে একটি পরীক্ষা বেছে নাও",
+    myExamsTitle: "আমার পরীক্ষাসমূহ",
+    myExamsDesc: "তোমার পরীক্ষার ইতিহাস ও স্কোর।",
+    noAttemptsYet: "তুমি এখনও কোনো পরীক্ষা দাওনি।",
+    coursesTitle: "কোর্স",
+    coursesLockedTitle: "পেইড কোর্স",
+    coursesLockedDesc: "এই অংশটি শুধু যেসব শিক্ষার্থী কোর্স কিনেছে তাদের জন্য উন্মুক্ত। অ্যাক্সেস পেতে অ্যাডমিনের সাথে যোগাযোগ করো।",
+    coursesComingSoon: "কোর্স কনটেন্ট শীঘ্রই এখানে যুক্ত করা হবে।",
   }
 };
 
