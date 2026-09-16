@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ক্লাস — অ্যাডমিন</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="admin">
+
+<div class="admin-shell">
+  <nav class="admin-nav" id="admin-nav"></nav>
+  <div class="admin-main">
+    <div class="toolbar">
+      <div>
+        <h1>ক্লাস পরিচালনা</h1>
+        <p class="hint">YouTube লিংক, Google Drive লিংক, অথবা অন্য কোথাও হোস্ট করা ভিডিও লিংক যোগ করো।</p>
+      </div>
+      <select id="subject-select" style="padding:9px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); background:#fff; font-family:var(--bangla); max-width:100%;"></select>
+    </div>
+
+    <div class="card" style="max-width:520px; margin-bottom:32px;">
+      <h3 style="font-size:1rem;">নতুন ক্লাস যোগ করো</h3>
+      <div class="field"><label>শিরোনাম</label><input type="text" id="c-title" placeholder="যেমন: অধ্যায় ১ — পরিচিতি"></div>
+      <div class="field">
+        <label>ভিডিও লিংক</label>
+        <input type="url" id="c-url" placeholder="YouTube, Google Drive, অথবা সরাসরি ভিডিও লিংক">
+      </div>
+      <p class="hint" style="margin-bottom:14px;">
+        নিজের রেকর্ড করা ক্লাস দিতে চাইলে: ইউটিউবে (Unlisted হিসেবেও করা যায়) বা Google Drive-এ আপলোড করে সেই লিংকটি এখানে বসাও।
+      </p>
+      <button class="btn btn-primary" id="c-add-btn">যোগ করো</button>
+    </div>
+
+    <div id="class-list"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderAdminNav } from "../js/admin-nav.js";
+  import { getSubjects, getClassesBySubject, addClass, deleteClass, renderVideoEmbed } from "../js/data.js";
+
+  renderAdminNav("classes.html");
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  const select = document.getElementById("subject-select");
+  const list = document.getElementById("class-list");
+  let activeSubjectId = null;
+
+  const subjects = await getSubjects();
+  if (subjects.length === 0) {
+    select.innerHTML = `<option>কোনো বিষয় নেই</option>`;
+    list.innerHTML = `<p class="hint">প্রথমে প্রশ্ন ব্যাংক পাতা থেকে একটি বিষয় যোগ করো।</p>`;
+  } else {
+    select.innerHTML = subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name_bn)}</option>`).join("");
+    activeSubjectId = subjects[0].id;
+    await renderList();
+  }
+
+  select.addEventListener("change", async (e) => {
+    activeSubjectId = e.target.value;
+    await renderList();
+  });
+
+  document.getElementById("c-add-btn").addEventListener("click", async () => {
+    const title_bn = document.getElementById("c-title").value.trim();
+    const url = document.getElementById("c-url").value.trim();
+    if (!title_bn || !url) { alert("শিরোনাম ও লিংক দুটোই আবশ্যক।"); return; }
+    await addClass({ subjectId: activeSubjectId, title_bn, url });
+    document.getElementById("c-title").value = "";
+    document.getElementById("c-url").value = "";
+    await renderList();
+  });
+
+  async function renderList() {
+    list.innerHTML = `<p class="hint">লোড হচ্ছে…</p>`;
+    const classes = await getClassesBySubject(activeSubjectId);
+    if (classes.length === 0) {
+      list.innerHTML = `<p class="hint">এই বিষয়ে এখনও কোনো ক্লাস যোগ করা হয়নি।</p>`;
+      return;
+    }
+    list.innerHTML = "";
+    classes.forEach(c => {
+      const wrap = document.createElement("div");
+      wrap.className = "card";
+      wrap.style.marginBottom = "16px";
+      wrap.style.maxWidth = "640px";
+      wrap.innerHTML = `
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h3 style="font-size:1rem; margin:0;">${escapeHtml(c.title_bn)}</h3>
+          <button class="btn btn-outline" data-del="${c.id}" style="padding:6px 12px; font-size:.78rem;">মুছো</button>
+        </div>
+        ${renderVideoEmbed(c.url)}
+      `;
+      list.appendChild(wrap);
+    });
+    list.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("এই ক্লাসটি মুছে ফেলা হবে। নিশ্চিত?")) return;
+        await deleteClass(btn.dataset.del);
+        await renderList();
+      });
+    });
+  }
+</script>
+</body>
+</html>
