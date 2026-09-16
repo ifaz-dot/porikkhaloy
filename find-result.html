@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find my result — Porikkhaloy</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell" style="max-width:520px;">
+    <h1 style="font-size:1.6rem;" data-i18n="findResultTitle">Find my result</h1>
+    <p class="hint" style="margin-bottom:24px;" data-i18n="findResultDesc">Enter the phone number you used when taking the exam to see your results anytime.</p>
+
+    <form class="card" id="lookup-form" style="max-width:100%;">
+      <div class="field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone" required></div>
+      <button type="submit" class="btn btn-primary" data-i18n="searchBtn">Search</button>
+    </form>
+
+    <div id="results-list" style="margin-top:28px;"></div>
+  </div>
+</main>
+
+<script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
+  import { getAttemptsByPhone, getAllQuizzes } from "./js/data.js";
+
+  applyTheme();
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+
+  const list = document.getElementById("results-list");
+
+  document.getElementById("lookup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const phone = document.getElementById("phone").value.trim();
+    list.innerHTML = `<p class="hint">${t("loading")}</p>`;
+
+    const attempts = await getAttemptsByPhone(phone);
+    if (attempts.length === 0) {
+      list.innerHTML = `<p class="hint">${t("noResultsFound")}</p>`;
+      return;
+    }
+    const quizzes = await getAllQuizzes();
+    const quizById = Object.fromEntries(quizzes.map(q => [q.id, q]));
+
+    list.innerHTML = "";
+    attempts.forEach(a => {
+      const quiz = quizById[a.quizId];
+      const when = a.startedAt ? new Date(a.startedAt).toLocaleDateString() : "—";
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.marginBottom = "14px";
+      card.style.maxWidth = "100%";
+      card.innerHTML = `
+        <h3 style="font-size:1rem;">${quiz ? quiz.title_bn : a.quizId}</h3>
+        <p class="hint">${a.score}/${a.total} — ${when}</p>
+        <a class="btn btn-outline" href="result.html?fbid=${a.id}" style="padding:8px 16px; font-size:.85rem;">${t("viewResult")}</a>
+      `;
+      list.appendChild(card);
+    });
+  });
+</script>
+</body>
+</html>
