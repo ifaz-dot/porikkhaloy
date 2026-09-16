@@ -42,6 +42,8 @@ const translations = {
     startRulesText: "Once you start, the timer begins. Switching tabs or leaving the page shows a warning — if you don't return in time, the exam is auto-submitted.",
     quizNotFound: "Exam not found",
     alreadyAttemptedMsg: "You've already attempted this exam from this network. Only one attempt is allowed per connection.",
+    examStartsAt: "This exam starts at",
+    examClosed: "The submission window for this exam has closed.",
     signedInAs: "Signed in as",
     notYouSwitch: "Not you? Log out and start again.",
 
@@ -104,6 +106,16 @@ const translations = {
     coursesLockedTitle: "Paid courses",
     coursesLockedDesc: "This section is available to students with an active course purchase. Contact the admin to get access.",
     coursesComingSoon: "Course content will appear here once available.",
+
+    findResultTitle: "Find my result",
+    findResultDesc: "Enter the phone number you used when taking the exam to see your results anytime.",
+    searchBtn: "Search",
+    noResultsFound: "No results found for that phone number.",
+    viewResult: "View result",
+    completeProfileFirst: "Please add your class and phone number to your profile before taking an exam.",
+    goToProfile: "Go to profile",
+    navFindResult: "Find Result",
+    navClassesContent: "Classes",
   },
   bn: {
     brand: "পরীক্ষালয়",
@@ -143,6 +155,8 @@ const translations = {
     startRulesText: "শুরু করার পর টাইমার চালু হবে। ট্যাব পরিবর্তন করলে সতর্কবার্তা দেখানো হবে — সময়মতো না ফিরলে পরীক্ষা স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে।",
     quizNotFound: "পরীক্ষা খুঁজে পাওয়া যায়নি",
     alreadyAttemptedMsg: "এই নেটওয়ার্ক থেকে তুমি ইতিমধ্যে এই পরীক্ষায় অংশ নিয়েছ। প্রতিটি সংযোগ থেকে একবারই অংশ নেওয়া যায়।",
+    examStartsAt: "এই পরীক্ষা শুরু হবে",
+    examClosed: "এই পরীক্ষার জমাদানের সময় শেষ হয়ে গেছে।",
     signedInAs: "লগইন করা আছে:",
     notYouSwitch: "এটা তুমি না? লগআউট করে আবার চেষ্টা করো।",
 
@@ -205,6 +219,16 @@ const translations = {
     coursesLockedTitle: "পেইড কোর্স",
     coursesLockedDesc: "এই অংশটি শুধু যেসব শিক্ষার্থী কোর্স কিনেছে তাদের জন্য উন্মুক্ত। অ্যাক্সেস পেতে অ্যাডমিনের সাথে যোগাযোগ করো।",
     coursesComingSoon: "কোর্স কনটেন্ট শীঘ্রই এখানে যুক্ত করা হবে।",
+
+    findResultTitle: "আমার ফলাফল খুঁজো",
+    findResultDesc: "পরীক্ষা দেওয়ার সময় ব্যবহৃত ফোন নম্বর দাও, যেকোনো সময় তোমার ফলাফল দেখতে পারবে।",
+    searchBtn: "খুঁজো",
+    noResultsFound: "এই ফোন নম্বরে কোনো ফলাফল পাওয়া যায়নি।",
+    viewResult: "ফলাফল দেখো",
+    completeProfileFirst: "পরীক্ষা দেওয়ার আগে তোমার প্রোফাইলে ক্লাস ও ফোন নম্বর যোগ করো।",
+    goToProfile: "প্রোফাইলে যাও",
+    navFindResult: "ফলাফল খুঁজো",
+    navClassesContent: "ক্লাস",
   }
 };
 
