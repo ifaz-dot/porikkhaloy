@@ -116,6 +116,7 @@ const translations = {
     goToProfile: "Go to profile",
     navFindResult: "Find Result",
     navClassesContent: "Classes",
+    selectClass: "-- Select Class --",
   },
   bn: {
     brand: "পরীক্ষালয়",
@@ -229,6 +230,7 @@ const translations = {
     goToProfile: "প্রোফাইলে যাও",
     navFindResult: "ফলাফল খুঁজো",
     navClassesContent: "ক্লাস",
+    selectClass: "-- ক্লাস নির্বাচন করো --",
   }
 };
 
