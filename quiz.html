@@ -90,7 +90,17 @@
     q.options_bn.forEach((opt, i) => {
       const li = document.createElement("li");
       li.className = "option" + (attempt.answers[q.id] === i ? " selected" : "");
-      li.innerHTML = `<span class="label">${labels[i]}.</span><span>${opt}</span>`;
+
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "label";
+      labelSpan.textContent = labels[i] + ".";
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = opt;
+
+      li.appendChild(labelSpan);
+      li.appendChild(textSpan);
+
       li.addEventListener("click", () => {
         attempt.answers[q.id] = i;
         saveAttempt(attempt);
