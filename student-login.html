@@ -38,10 +38,12 @@
 </main>
 
 <script type="module">
-  import { applyI18n } from "./js/i18n.js";
+  import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
   import { signInStudent, logInWithGoogle } from "./js/student-auth.js";
 
+  applyTheme();
   applyI18n();
   renderSiteNavExtras(document.getElementById("nav-extra"));
 
