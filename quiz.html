@@ -52,8 +52,16 @@
   applyI18n();
 
   const attemptId = new URLSearchParams(location.search).get("attempt");
-  const attempt = getAttempt(attemptId);
-  const quiz = attempt ? await getQuiz(attempt.quizId) : null;
+  let attempt, quiz;
+
+  try {
+    attempt = getAttempt(attemptId);
+    quiz = attempt ? await getQuiz(attempt.quizId) : null;
+  } catch (e) {
+    console.error("Quiz load error:", e);
+    document.body.innerHTML = `<main><div class="shell"><p style="color:var(--bad);">লোড করতে সমস্যা হয়েছে: ${e.message}</p><p><a href="index.html">প্রথম পাতায় ফিরে যাও</a></p></div></main>`;
+    throw e;
+  }
 
   if (!attempt || !quiz) {
     document.body.innerHTML = `<main><div class="shell"><p>${t("examNotFound")} <a href="index.html">${t("home")}</a></p></div></main>`;
@@ -127,7 +135,13 @@
   const timerEl = document.getElementById("timer");
   function tick() {
     const elapsed = Math.floor((Date.now() - attempt.startedAt) / 1000);
-    const remaining = Math.max(0, quiz.durationSeconds - elapsed);
+    let remaining = Math.max(0, quiz.durationSeconds - elapsed);
+    // If the quiz has a hard deadline (examEndAt), the timer can never
+    // run past it — whichever runs out first wins.
+    if (quiz.examEndAt) {
+      const secondsToDeadline = Math.floor((quiz.examEndAt - Date.now()) / 1000);
+      remaining = Math.max(0, Math.min(remaining, secondsToDeadline));
+    }
     const m = String(Math.floor(remaining / 60)).padStart(2, "0");
     const s = String(remaining % 60).padStart(2, "0");
     timerEl.textContent = `${m}:${s}`;
