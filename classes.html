@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classes — Porikkhaloy</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell">
+    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
+    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
+  </div>
+</header>
+
+<main>
+  <div class="shell">
+    <div class="toolbar">
+      <h2 data-i18n="navClassesContent" style="margin:0;">Classes</h2>
+      <select id="subject-select" style="padding:8px 12px; border:1.5px solid var(--rule); border-radius:var(--radius); background:#fff; font-family:inherit; max-width:100%;"></select>
+    </div>
+
+    <div id="class-list" style="margin-top:20px;"></div>
+  </div>
+</main>
+
+<script type="module">
+  import { applyI18n, t } from "./js/i18n.js";
+  import { applyTheme } from "./js/theme.js";
+  import { renderSiteNavExtras } from "./js/site-header.js";
+  import { getSubjects, getClassesBySubject, renderVideoEmbed } from "./js/data.js";
+
+  applyTheme();
+  applyI18n();
+  renderSiteNavExtras(document.getElementById("nav-extra"));
+
+  const select = document.getElementById("subject-select");
+  const list = document.getElementById("class-list");
+
+  const subjects = await getSubjects();
+  if (subjects.length === 0) {
+    select.style.display = "none";
+    list.innerHTML = `<p class="hint">${t("noSubjects")}</p>`;
+  } else {
+    select.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name_bn}</option>`).join("");
+    const urlSubject = new URLSearchParams(location.search).get("subject");
+    const initial = urlSubject && subjects.some(s => s.id === urlSubject) ? urlSubject : subjects[0].id;
+    select.value = initial;
+    await renderList(initial);
+    select.addEventListener("change", (e) => renderList(e.target.value));
+  }
+
+  async function renderList(subjectId) {
+    list.innerHTML = `<p class="hint">${t("loading")}</p>`;
+    const classes = await getClassesBySubject(subjectId);
+    if (classes.length === 0) {
+      list.innerHTML = `<p class="hint">No classes added for this subject yet.</p>`;
+      return;
+    }
+    list.innerHTML = "";
+    classes.forEach(c => {
+      const wrap = document.createElement("div");
+      wrap.className = "card";
+      wrap.style.marginBottom = "20px";
+      wrap.style.maxWidth = "720px";
+      wrap.innerHTML = `<h3 style="font-size:1.05rem;">${c.title_bn}</h3>${renderVideoEmbed(c.url)}`;
+      list.appendChild(wrap);
+    });
+  }
+</script>
+</body>
+</html>
