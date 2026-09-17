@@ -48,7 +48,7 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getSubjects, getQuizzesBySubject, getQuiz, getLeaderboard } from "./js/data.js";
+  import { getSubjects, getQuizzesBySubject, getQuiz, getLeaderboard, areResultsVisible } from "./js/data.js";
 
   applyTheme();
   applyI18n();
@@ -82,6 +82,12 @@
     body.innerHTML = `<tr><td colspan="5" class="hint">${t("loading")}</td></tr>`;
     const quiz = await getQuiz(quizId);
     titleEl.textContent = quiz ? `${t("leaderboardTitle")} — ${quiz.title_bn}` : t("leaderboardTitle");
+
+    if (quiz && !areResultsVisible(quiz)) {
+      const when = quiz.examEndAt ? new Date(quiz.examEndAt).toLocaleString("bn-BD") : "";
+      body.innerHTML = `<tr><td colspan="5" class="hint">লিডারবোর্ড ${when ? `<strong>${when}</strong>-এর পর` : "পরীক্ষা শেষ হলে"} প্রকাশিত হবে।</td></tr>`;
+      return;
+    }
 
     const board = await getLeaderboard(quizId);
     body.innerHTML = "";
