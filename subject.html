@@ -35,8 +35,8 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getSubjects, getQuizzesBySubject, hasAttempted, getExamWindowStatus, areResultsVisible } from "./js/data.js";
-
+  import { getSubjects, getQuizzesBySubject, hasAttempted, hasAttemptedByAccount, getExamWindowStatus, areResultsVisible } from "./js/data.js";
+  import { watchStudentAuth } from "./js/student-auth.js";
   applyTheme();
   applyI18n();
   const nav = document.getElementById("nav-extra");
@@ -49,18 +49,18 @@
   const list = document.getElementById("quiz-list");
 
   const subjects = await getSubjects();
-  const subject = subjects.find(s => s.id === subjectId);
+const subject = subjects.find(s => s.id === subjectId);
 
-  if (!subject) {
+if (!subject) {
     document.getElementById("subject-title").textContent = t("subjectNotFound");
-  } else {
+} else {
     document.getElementById("subject-kicker").textContent = subject.name_en || "";
     document.getElementById("subject-title").textContent = subject.name_bn;
 
     const quizzes = await getQuizzesBySubject(subjectId);
+    let currentUser = null;
 
-    function makeCard(q, isNewest) {
-      const already = hasAttempted(q.id);
+    function makeCard(q, isNewest, already) {
       const card = document.createElement("div");
       card.className = "card";
       card.style.marginBottom = "16px";
@@ -77,13 +77,23 @@
       return card;
     }
 
-    const current = quizzes.filter(q => getExamWindowStatus(q) !== "closed");
-    const previous = quizzes.filter(q => getExamWindowStatus(q) === "closed");
+    async function renderList() {
+      list.innerHTML = "";
+      const current = quizzes.filter(q => getExamWindowStatus(q) !== "closed");
+      const previous = quizzes.filter(q => getExamWindowStatus(q) === "closed");
 
-    if (quizzes.length === 0) {
-      list.innerHTML = `<p class="hint">${t("noExamsYet")}</p>`;
-    } else {
-      current.forEach((q, i) => list.appendChild(makeCard(q, i === 0)));
+      if (quizzes.length === 0) {
+        list.innerHTML = `<p class="hint">${t("noExamsYet")}</p>`;
+        return;
+      }
+
+      for (let i = 0; i < current.length; i++) {
+        const q = current[i];
+        const already = currentUser
+          ? await hasAttemptedByAccount(q.id, currentUser.uid)
+          : hasAttempted(q.id);
+        list.appendChild(makeCard(q, i === 0, already));
+      }
 
       if (previous.length > 0) {
         const h = document.createElement("h3");
@@ -91,8 +101,11 @@
         h.textContent = "পূর্ববর্তী পরীক্ষা";
         list.appendChild(h);
 
-        previous.forEach(q => {
-          const card = makeCard(q, false);
+        for (const q of previous) {
+          const already = currentUser
+            ? await hasAttemptedByAccount(q.id, currentUser.uid)
+            : hasAttempted(q.id);
+          const card = makeCard(q, false, already);
           const link = document.createElement("a");
           link.href = `leaderboard.html?quiz=${q.id}`;
           link.className = "hint";
@@ -100,10 +113,15 @@
           link.textContent = areResultsVisible(q) ? "→ লিডারবোর্ড দেখো" : "(ফলাফল শীঘ্রই)";
           card.appendChild(link);
           list.appendChild(card);
-        });
+        }
       }
     }
-  }
+
+    watchStudentAuth(async (user) => {
+      currentUser = user;
+      await renderList();
+    });
+}
 </script>
 </body>
 </html>
