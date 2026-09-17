@@ -93,6 +93,15 @@ export function getExamWindowStatus(quiz) {
   return "open";
 }
 
+export function areResultsVisible(quiz) {
+  if (quiz.resultsPublished) return true;
+  if (quiz.examEndAt) return Date.now() >= quiz.examEndAt;
+  return true;
+}
+
+export async function setResultsPublished(quizId, published) {
+  return updateDoc(doc(db, "quizzes", quizId), { resultsPublished: !!published });
+}
 export async function deleteQuiz(id) {
   return deleteDoc(doc(db, "quizzes", id));
 }
