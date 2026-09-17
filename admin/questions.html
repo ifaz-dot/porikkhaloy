@@ -92,7 +92,7 @@
     getSubjects, addSubject, updateSubject, deleteSubject,
     getQuizzesBySubject, addQuiz, deleteQuiz, updateQuizSchedule,
     addQuestionToQuiz, addQuestionsToQuiz, updateQuestionInQuiz,
-    deleteQuestionFromQuiz, parseQuestionCSV
+    deleteQuestionFromQuiz, parseQuestionCSV, setResultsPublished
   } from "../js/data.js";
 
   renderAdminNav("questions.html");
@@ -209,7 +209,7 @@
       const scheduleText = quiz.examStartAt || quiz.examEndAt
         ? `<span class="hint">সময়সূচী: ${quiz.examStartAt ? new Date(quiz.examStartAt).toLocaleString("bn-BD") : "—"} থেকে ${quiz.examEndAt ? new Date(quiz.examEndAt).toLocaleString("bn-BD") : "—"} পর্যন্ত</span>`
         : `<span class="hint">কোনো সময়সূচী নির্ধারিত নেই (সবসময় খোলা)</span>`;
-      wrap.innerHTML = `
+     wrap.innerHTML = `
         <div class="toolbar" style="margin-bottom:6px;">
           <h2 style="font-size:1.05rem; margin:0;">${escapeHtml(quiz.title_bn)}</h2>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -219,6 +219,9 @@
               CSV ইমপোর্ট
               <input type="file" accept=".csv,text/csv" data-import-q="${quiz.id}" style="display:none;">
             </label>
+            <button class="btn ${quiz.resultsPublished ? "btn-outline" : "btn-mustard"}" data-toggle-publish="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">
+              ${quiz.resultsPublished ? "ফলাফল আটকে রাখো" : "এখনই ফলাফল প্রকাশ করো"}
+            </button>
             <button class="btn btn-outline" data-del-quiz="${quiz.id}" style="padding:8px 14px; font-size:.85rem;">পরীক্ষা মুছো</button>
           </div>
         </div>
@@ -281,6 +284,13 @@
         await deleteQuiz(btn.dataset.delQuiz);
         await renderQuizArea();
         await loadSubjects();
+      });
+    });
+    container.querySelectorAll("[data-toggle-publish]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const quiz = quizzes.find(q => q.id === btn.dataset.togglePublish);
+        await setResultsPublished(quiz.id, !quiz.resultsPublished);
+        await renderQuizArea();
       });
     });
     container.querySelectorAll("[data-import-q]").forEach(input => {
