@@ -276,7 +276,15 @@ export function hasAttempted(quizId) {
   // Real backend: server checks requester IP against /ipAttempts/{quizId}_{ip}.
   return !!localStorage.getItem(attemptKey(quizId));
 }
-
+export async function hasAttemptedByAccount(quizId, uid) {
+  const q = query(
+    collection(db, "attempts"),
+    where("quizId", "==", quizId),
+    where("student.uid", "==", uid)
+  );
+  const snap = await getDocs(q);
+  return !snap.empty;
+}
 export function startAttempt(quizId, student) {
   const attemptId = "a_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   const record = {
