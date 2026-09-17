@@ -40,7 +40,7 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getAttempt, getAttemptByFirestoreId, getQuiz } from "./js/data.js";
+  import { getAttempt, getAttemptByFirestoreId, getQuiz, areResultsVisible } from "./js/data.js";
 
   applyTheme();
   applyI18n();
@@ -55,35 +55,46 @@
 
   if (!attempt || attempt.score === undefined) {
     document.querySelector("main .shell").innerHTML = `<p>${t("resultNotFound")}</p>`;
-  } else {
+ } else {
     const quiz = await getQuiz(attempt.quizId);
     document.getElementById("quiz-title").textContent = quiz.title_bn;
-    document.getElementById("score").textContent = attempt.score;
-    document.getElementById("of").textContent = `/ ${attempt.total} — ${attempt.student.name}`;
-    document.getElementById("leaderboard-link").href = `leaderboard.html?quiz=${attempt.quizId}`;
 
-    const statusLine = document.getElementById("status-line");
-    if (attempt.status === "ended-early") {
-      statusLine.innerHTML = `<span class="status-tag ended-early">${t("endedEarly")}</span> — ${t("endedEarlyDesc")}`;
-    } else {
-      statusLine.innerHTML = `<span class="status-tag completed">${t("completed")}</span>`;
-    }
-
-    const reviewEl = document.getElementById("review");
-    quiz.questions.forEach((q, i) => {
-      const given = attempt.answers[q.id];
-      const correct = given === q.correctIndex;
-      const div = document.createElement("div");
-      div.className = "review-item";
-      div.innerHTML = `
-        <div class="q">${i + 1}. ${q.text_bn}</div>
-        <div class="hint">${t("yourAnswer")} ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : t("noAnswer")}</div>
-        ${!correct ? `<div class="hint">${t("correctAnswer")} ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
-        ${q.explanation_bn ? `<div class="hint" style="margin-top:6px; padding:10px 12px; background:var(--paper-2); border-radius:var(--radius);"><strong>${t("explanation")}</strong> ${q.explanation_bn}</div>` : ""}
-        <span class="mark ${correct ? "correct" : "wrong"}">${correct ? t("correct") : t("wrong")}</span>
+    if (!areResultsVisible(quiz)) {
+      const when = quiz.examEndAt ? new Date(quiz.examEndAt).toLocaleString("bn-BD") : "";
+      document.querySelector("main .shell").innerHTML = `
+        <h2>${quiz.title_bn}</h2>
+        <p class="hint">তোমার উত্তর জমা হয়েছে। ফলাফল ও উত্তরপত্র প্রকাশিত হবে
+          ${when ? `<strong>${when}</strong>-এর পর।` : "শীঘ্রই।"}</p>
+        <a href="index.html" class="btn btn-outline">প্রথম পাতায় ফিরে যাও</a>
       `;
-      reviewEl.appendChild(div);
-    });
+    } else {
+      document.getElementById("score").textContent = attempt.score;
+      document.getElementById("of").textContent = `/ ${attempt.total} — ${attempt.student.name}`;
+      document.getElementById("leaderboard-link").href = `leaderboard.html?quiz=${attempt.quizId}`;
+
+      const statusLine = document.getElementById("status-line");
+      if (attempt.status === "ended-early") {
+        statusLine.innerHTML = `<span class="status-tag ended-early">${t("endedEarly")}</span> — ${t("endedEarlyDesc")}`;
+      } else {
+        statusLine.innerHTML = `<span class="status-tag completed">${t("completed")}</span>`;
+      }
+
+      const reviewEl = document.getElementById("review");
+      quiz.questions.forEach((q, i) => {
+        const given = attempt.answers[q.id];
+        const correct = given === q.correctIndex;
+        const div = document.createElement("div");
+        div.className = "review-item";
+        div.innerHTML = `
+          <div class="q">${i + 1}. ${q.text_bn}</div>
+          <div class="hint">${t("yourAnswer")} ${given !== undefined ? labels[given] + ". " + q.options_bn[given] : t("noAnswer")}</div>
+          ${!correct ? `<div class="hint">${t("correctAnswer")} ${labels[q.correctIndex]}. ${q.options_bn[q.correctIndex]}</div>` : ""}
+          ${q.explanation_bn ? `<div class="hint" style="margin-top:6px; padding:10px 12px; background:var(--paper-2); border-radius:var(--radius);"><strong>${t("explanation")}</strong> ${q.explanation_bn}</div>` : ""}
+          <span class="mark ${correct ? "correct" : "wrong"}">${correct ? t("correct") : t("wrong")}</span>
+        `;
+        reviewEl.appendChild(div);
+      });
+    }
   }
 </script>
 </body>
