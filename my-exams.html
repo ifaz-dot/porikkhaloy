@@ -23,8 +23,8 @@
 
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>Exam</th><th>Score</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody id="rows-body"><tr><td colspan="4" class="hint" data-i18n="loading">Loading…</td></tr></tbody>
+          <thead><tr><th>Exam</th><th>Score</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          body.innerHTML = `<tr><td colspan="4" class="hint">${t("noAttemptsYet")}</td></tr>`;
         </table>
       </div>
     </section>
@@ -36,7 +36,7 @@
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
   import { watchStudentAuth } from "./js/student-auth.js";
-  import { getAllAttempts, getQuiz } from "./js/data.js";
+  import { getAllAttempts, getQuiz, areResultsVisible } from "./js/data.js";
 
   applyTheme();
   applyI18n();
@@ -60,6 +60,7 @@
     for (const a of mine) {
       const quiz = await getQuiz(a.quizId);
       const when = a.startedAt ? new Date(a.startedAt).toLocaleDateString() : "—";
+      const canView = a.score !== undefined && quiz && areResultsVisible(quiz);
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${quiz ? quiz.title_bn : a.quizId}</td>
@@ -68,6 +69,9 @@
           ? `<span class="pill warn">${t("endedEarly")}</span>`
           : `<span class="pill ok">${t("completed")}</span>`}</td>
         <td class="hint">${when}</td>
+        <td>${canView
+          ? `<a href="result.html?fbid=${a.id}" class="btn btn-outline" style="padding:6px 12px; font-size:.78rem;">ফলাফল দেখো</a>`
+          : (a.score !== undefined ? `<span class="hint">প্রকাশ শীঘ্রই</span>` : "")}</td>
       `;
       body.appendChild(tr);
     }
