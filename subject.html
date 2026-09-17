@@ -35,7 +35,7 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getSubjects, getQuizzesBySubject, hasAttempted } from "./js/data.js";
+  import { getSubjects, getQuizzesBySubject, hasAttempted, getExamWindowStatus, areResultsVisible } from "./js/data.js";
 
   applyTheme();
   applyI18n();
@@ -58,24 +58,51 @@
     document.getElementById("subject-title").textContent = subject.name_bn;
 
     const quizzes = await getQuizzesBySubject(subjectId);
-    if (quizzes.length === 0) {
-      list.innerHTML = `<p class="hint">${t("noExamsYet")}</p>`;
-    }
-    quizzes.forEach(q => {
+
+    function makeCard(q, isNewest) {
       const already = hasAttempted(q.id);
       const card = document.createElement("div");
       card.className = "card";
       card.style.marginBottom = "16px";
       card.style.maxWidth = "100%";
+      if (isNewest) { card.style.borderColor = "var(--mustard)"; card.style.borderWidth = "2px"; }
       card.innerHTML = `
+        ${isNewest ? `<div class="kicker" style="margin-bottom:6px;">নতুন</div>` : ""}
         <h3 style="font-size:1.1rem;">${q.title_bn}</h3>
         <p class="hint">${t("duration")}: ${Math.floor(q.durationSeconds / 60)} ${t("minutes")} · ${t("questions")}: ${(q.questions || []).length}</p>
         ${already
           ? `<span class="status-tag ended-early">${t("alreadyAttempted")}</span>`
           : `<a class="btn btn-mustard" href="start.html?quiz=${q.id}">${t("startExamBtn")}</a>`}
       `;
-      list.appendChild(card);
-    });
+      return card;
+    }
+
+    const current = quizzes.filter(q => getExamWindowStatus(q) !== "closed");
+    const previous = quizzes.filter(q => getExamWindowStatus(q) === "closed");
+
+    if (quizzes.length === 0) {
+      list.innerHTML = `<p class="hint">${t("noExamsYet")}</p>`;
+    } else {
+      current.forEach((q, i) => list.appendChild(makeCard(q, i === 0)));
+
+      if (previous.length > 0) {
+        const h = document.createElement("h3");
+        h.style.marginTop = "36px";
+        h.textContent = "পূর্ববর্তী পরীক্ষা";
+        list.appendChild(h);
+
+        previous.forEach(q => {
+          const card = makeCard(q, false);
+          const link = document.createElement("a");
+          link.href = `leaderboard.html?quiz=${q.id}`;
+          link.className = "hint";
+          link.style.marginLeft = "10px";
+          link.textContent = areResultsVisible(q) ? "→ লিডারবোর্ড দেখো" : "(ফলাফল শীঘ্রই)";
+          card.appendChild(link);
+          list.appendChild(card);
+        });
+      }
+    }
   }
 </script>
 </body>
