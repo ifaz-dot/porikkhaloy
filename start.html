@@ -57,7 +57,7 @@
   import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
   import { renderSiteNavExtras } from "./js/site-header.js";
-  import { getQuiz, hasAttempted, startAttempt, getExamWindowStatus } from "./js/data.js";
+  import { getQuiz, hasAttempted, hasAttemptedByAccount, startAttempt, getExamWindowStatus } from "./js/data.js";
   import { watchStudentAuth, getStudentProfile } from "./js/student-auth.js";
 
   applyTheme();
@@ -78,7 +78,7 @@
     document.getElementById("quiz-meta").textContent =
       `${t("duration")}: ${Math.floor(quiz.durationSeconds / 60)} ${t("minutes")} · ${t("questions")}: ${(quiz.questions || []).length}`;
 
-    const locked = hasAttempted(quizId);
+    let locked = hasAttempted(quizId); // guest/browser lock, refined below for signed-in users
     const windowStatus = getExamWindowStatus(quiz);
 
     if (windowStatus === "not_started") {
@@ -103,6 +103,13 @@
         studentProfile = await getStudentProfile(user.uid);
         guestForm.style.display = "none";
 
+        // Signed-in students are locked by account, not by browser.
+        locked = await hasAttemptedByAccount(quizId, user.uid);
+        if (locked) {
+          err.textContent = t("alreadyAttemptedMsg");
+          err.classList.add("show");
+        }
+
         const profileIncomplete = !studentProfile?.cls || !studentProfile?.phone;
         if (profileIncomplete && !locked && !windowBlocked) {
           signedInCard.style.display = "none";
@@ -119,8 +126,8 @@
       }
     });
 
-    document.getElementById("signed-in-start-btn")?.addEventListener("click", () => {
-      if (hasAttempted(quizId) || getExamWindowStatus(quiz) !== "open") return;
+    document.getElementById("signed-in-start-btn")?.addEventListener("click", async () => {
+      if (locked || (await hasAttemptedByAccount(quizId, studentUid)) || getExamWindowStatus(quiz) !== "open") return;
       if (!studentProfile?.cls || !studentProfile?.phone) return;
       const student = {
         name: studentProfile?.name || "",
