@@ -3,75 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Log in — Porikkhaloy</title>
+<title>Sign in — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  body.authp{ background:var(--paper); }
+  .authp-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px;
+  }
+  .authp-card{
+    width:100%; max-width:400px;
+    background:#fff; border:1px solid #e2e2e2; border-radius:10px;
+    padding:36px 32px; box-shadow:0 2px 10px rgba(0,0,0,.04);
+  }
+  :root[data-theme="dark"] .authp-card{ background:var(--paper-2); border-color:var(--rule); }
+  .authp-card h1{
+    font-family: var(--serif); font-size:1.9rem; font-weight:700; color:var(--ink);
+    margin:0 0 8px;
+  }
+  .authp-sub{ font-size:.92rem; color:var(--ink-soft); margin:0 0 24px; }
+  .authp-sub a{ color:#1877f2; text-decoration:none; font-weight:600; }
+  .authp-sub a:hover{ text-decoration:underline; }
+  .authp-field{ margin-bottom:14px; }
+  .authp-field input{
+    width:100%; padding:13px 14px; border:1.5px solid #dcdcdc; border-radius:8px;
+    font-size:.95rem; font-family:var(--bangla); color:var(--ink); background:#fff;
+  }
+  :root[data-theme="dark"] .authp-field input{ background:var(--paper); border-color:var(--rule); }
+  .authp-field input:focus{ outline:none; border-color:#1877f2; }
+  .authp-remember{
+    display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--ink);
+    margin:4px 0 20px; user-select:none; cursor:pointer;
+  }
+  .authp-remember input{ width:16px; height:16px; accent-color:#1877f2; cursor:pointer; }
+  .authp-btn-primary{
+    width:100%; padding:13px; border:none; border-radius:8px; background:#1877f2; color:#fff;
+    font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .authp-btn-primary:hover{ background:#166fe0; }
+  .authp-btn-primary:disabled{ opacity:.6; cursor:not-allowed; }
+  .authp-divider{ text-align:center; color:var(--ink-soft); font-size:.8rem; margin:18px 0; }
+  .authp-btn-google{
+    width:100%; padding:12px; border:1.5px solid #dcdcdc; border-radius:8px; background:#fff;
+    color:var(--ink); font-size:.95rem; font-weight:600; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .authp-btn-google:hover{ background:#f7f7f7; }
+  :root[data-theme="dark"] .authp-btn-google{ background:var(--paper); border-color:var(--rule); color:var(--ink); }
+  .authp-forgot{
+    display:block; text-align:center; margin-top:20px; font-size:.88rem; color:#1877f2; text-decoration:none;
+  }
+  .authp-forgot:hover{ text-decoration:underline; }
+  .authp-msg{ font-size:.85rem; padding:10px 12px; border-radius:6px; margin-bottom:16px; display:none; }
+  .authp-msg.show{ display:block; }
+  .authp-msg.error{ background:#f6e6e2; color:var(--bad); }
+  .authp-msg.ok{ background:#e2ecdf; color:var(--good); }
+</style>
 </head>
-<body>
+<body class="authp">
 
-<header class="site-header">
-  <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
-    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
-  </div>
-</header>
+<div class="authp-wrap">
+  <div class="authp-card">
+    <h1>Sign in</h1>
+    <p class="authp-sub">or <a href="signup.html">create an account</a></p>
 
-<main>
-  <div class="shell" style="max-width:420px;">
-    <h1 style="font-size:1.6rem;" data-i18n="logInTitle">Log in</h1>
+    <div class="authp-msg" id="msg"></div>
 
-    <div class="error-box" id="err"></div>
-
-    <button class="btn btn-outline" id="google-btn" style="width:100%; margin-bottom:18px;" data-i18n="continueGoogle">Continue with Google</button>
-    <div style="text-align:center; color:var(--ink-soft); font-size:.85rem; margin-bottom:18px;" data-i18n="or">or</div>
-
-    <form class="card" id="login-form" style="max-width:100%;">
-      <div class="field"><label data-i18n="email">Email</label><input type="email" id="email" required></div>
-      <div class="field"><label data-i18n="password">Password</label><input type="password" id="password" required></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;" id="submit-btn" data-i18n="logIn">Log in</button>
+    <form id="login-form">
+      <div class="authp-field"><input type="email" id="email" placeholder="Email" required autocomplete="username"></div>
+      <div class="authp-field"><input type="password" id="password" placeholder="Password" required autocomplete="current-password"></div>
+      <label class="authp-remember">
+        <input type="checkbox" id="remember" checked> Remember me
+      </label>
+      <button type="submit" class="authp-btn-primary" id="submit-btn">Sign in</button>
     </form>
 
-    <p class="hint" style="margin-top:16px;">
-      <span data-i18n="noAccount">Don't have an account?</span>
-      <a href="signup.html" data-i18n="signUp">Sign up</a>
-    </p>
+    <div class="authp-divider">or</div>
+
+    <button type="button" class="authp-btn-google" id="google-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.71a5.4 5.4 0 010-3.42V4.95H.96a9 9 0 000 8.1l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
+      Sign in with Google
+    </button>
+
+    <a href="#" class="authp-forgot" id="forgot-link">Forgotten your password?</a>
   </div>
-</main>
+</div>
 
 <script type="module">
-  import { applyI18n, t } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
-  import { renderSiteNavExtras } from "./js/site-header.js";
-  import { signInStudent, logInWithGoogle } from "./js/student-auth.js";
+  import { signInStudent, logInWithGoogle, setAuthPersistence, resetStudentPassword } from "./js/student-auth.js";
 
   applyTheme();
-  applyI18n();
-  renderSiteNavExtras(document.getElementById("nav-extra"));
 
-  const err = document.getElementById("err");
+  const msg = document.getElementById("msg");
+  function showMsg(text, ok = false) {
+    msg.textContent = text;
+    msg.className = "authp-msg show " + (ok ? "ok" : "error");
+  }
 
   document.getElementById("google-btn").addEventListener("click", async () => {
-    err.classList.remove("show");
+    msg.classList.remove("show");
     try {
+      await setAuthPersistence(document.getElementById("remember").checked);
       await logInWithGoogle();
       location.href = "profile.html";
     } catch (e) {
-      err.textContent = e.message;
-      err.classList.add("show");
+      showMsg(e.message);
     }
   });
 
   document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    err.classList.remove("show");
+    msg.classList.remove("show");
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
     try {
+      await setAuthPersistence(document.getElementById("remember").checked);
       await signInStudent(
         document.getElementById("email").value.trim(),
         document.getElementById("password").value
       );
       location.href = "profile.html";
     } catch (e2) {
-      err.textContent = e2.message;
-      err.classList.add("show");
+      showMsg("Incorrect email or password.");
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("forgot-link").addEventListener("click", async (e) => {
+    e.preventDefault();
+    msg.classList.remove("show");
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+      showMsg("Type your email above first, then click this link again.");
+      return;
+    }
+    try {
+      await resetStudentPassword(email);
+      showMsg("Password reset email sent — check your inbox.", true);
+    } catch (e3) {
+      showMsg(e3.message);
     }
   });
 </script>
