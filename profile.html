@@ -24,6 +24,14 @@
   }
   .fbp-card{ background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
   :root[data-theme="dark"] .fbp-card{ background:var(--paper); }
+  /* BUG FIX: the profile-header card (the one directly under the cover
+     photo) had overflow:hidden from the shared .fbp-card rule above —
+     fine for the other four cards, but this one contains the avatar,
+     which uses a negative top margin to overlap the cover photo. That
+     negative margin pushes the avatar above this card's own boundary,
+     so overflow:hidden was clipping its top half clean off. Rounding
+     only the bottom two corners here means nothing needs clipping. */
+  .fbp-head-card{ border-radius:0 0 12px 12px; overflow:visible; }
 
   .fbp-head{ padding:0 28px 20px; position:relative; text-align:center; }
   .fbp-avatar{
@@ -87,7 +95,7 @@
 
 <div class="fbp-wrap">
   <div class="fbp-cover"></div>
-  <div class="fbp-card">
+  <div class="fbp-card fbp-head-card">
     <div class="fbp-head">
       <div class="fbp-avatar" id="avatar">–</div>
       <div class="fbp-name" id="name-display">Loading…</div>
