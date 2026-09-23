@@ -2,7 +2,8 @@ import { auth, db } from "./firebase-config.js";
 import {
   GoogleAuthProvider, signInWithPopup,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  onAuthStateChanged, signOut
+  onAuthStateChanged, signOut, sendPasswordResetEmail,
+  setPersistence, browserLocalPersistence, browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc, updateDoc
@@ -20,6 +21,18 @@ async function ensureStudentDoc(user, defaults = {}) {
     });
   }
   return ref;
+}
+
+// "Remember me": local persistence survives browser restarts, session
+// persistence clears when the tab/browser closes. Call this BEFORE
+// signInWithEmailAndPassword / signInWithPopup, since persistence only
+// applies to the sign-in call that follows it.
+export async function setAuthPersistence(remember) {
+  return setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+}
+
+export async function resetStudentPassword(email) {
+  return sendPasswordResetEmail(auth, email);
 }
 
 export async function signUpWithGoogle() {
