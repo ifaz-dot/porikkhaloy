@@ -5,72 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign up — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  body.authp{ background:var(--paper); }
+  .authp-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px;
+  }
+  .authp-card{
+    width:100%; max-width:420px;
+    background:#fff; border:1px solid #e2e2e2; border-radius:10px;
+    padding:36px 32px; box-shadow:0 2px 10px rgba(0,0,0,.04);
+  }
+  :root[data-theme="dark"] .authp-card{ background:var(--paper-2); border-color:var(--rule); }
+  .authp-card h1{
+    font-family: var(--serif); font-size:1.9rem; font-weight:700; color:var(--ink);
+    margin:0 0 8px;
+  }
+  .authp-sub{ font-size:.92rem; color:var(--ink-soft); margin:0 0 24px; }
+  .authp-sub a{ color:#1877f2; text-decoration:none; font-weight:600; }
+  .authp-sub a:hover{ text-decoration:underline; }
+  .authp-field{ margin-bottom:14px; }
+  .authp-field label{ display:block; font-size:.8rem; font-weight:600; color:var(--ink-soft); margin-bottom:5px; }
+  .authp-field input, .authp-field select{
+    width:100%; padding:13px 14px; border:1.5px solid #dcdcdc; border-radius:8px;
+    font-size:.95rem; font-family:var(--bangla); color:var(--ink); background:#fff;
+  }
+  :root[data-theme="dark"] .authp-field input, :root[data-theme="dark"] .authp-field select{ background:var(--paper); border-color:var(--rule); }
+  .authp-field input:focus, .authp-field select:focus{ outline:none; border-color:#1877f2; }
+  .authp-btn-primary{
+    width:100%; padding:13px; border:none; border-radius:8px; background:#1877f2; color:#fff;
+    font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .authp-btn-primary:hover{ background:#166fe0; }
+  .authp-btn-primary:disabled{ opacity:.6; cursor:not-allowed; }
+  .authp-divider{ text-align:center; color:var(--ink-soft); font-size:.8rem; margin:18px 0; }
+  .authp-btn-google{
+    width:100%; padding:12px; border:1.5px solid #dcdcdc; border-radius:8px; background:#fff;
+    color:var(--ink); font-size:.95rem; font-weight:600; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .authp-btn-google:hover{ background:#f7f7f7; }
+  :root[data-theme="dark"] .authp-btn-google{ background:var(--paper); border-color:var(--rule); color:var(--ink); }
+  .authp-msg{ font-size:.85rem; padding:10px 12px; border-radius:6px; margin-bottom:16px; display:none; }
+  .authp-msg.show{ display:block; }
+  .authp-msg.error{ background:#f6e6e2; color:var(--bad); }
+  .authp-msg.ok{ background:#e2ecdf; color:var(--good); }
+</style>
 </head>
-<body>
+<body class="authp">
 
-<header class="site-header">
-  <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
-    <nav style="display:flex; gap:16px; align-items:center;" id="nav-extra"></nav>
-  </div>
-</header>
+<div class="authp-wrap">
+  <div class="authp-card">
+    <h1 data-i18n="signUpTitle">Create your account</h1>
+    <p class="authp-sub" data-i18n="signUpDesc">Save your profile so you don't need to re-enter your info every time.</p>
 
-<main>
-  <div class="shell" style="max-width:420px;">
-    <h1 style="font-size:1.6rem;" data-i18n="signUpTitle">Create your account</h1>
-    <p class="hint" style="margin-bottom:24px;" data-i18n="signUpDesc">Save your profile so you don't need to re-enter your info every time.</p>
+    <div class="authp-msg" id="msg"></div>
 
-    <div class="error-box" id="err"></div>
+    <button type="button" class="authp-btn-google" id="google-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.71a5.4 5.4 0 010-3.42V4.95H.96a9 9 0 000 8.1l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
+      <span data-i18n="continueGoogle">Continue with Google</span>
+    </button>
 
-    <button class="btn btn-outline" id="google-btn" style="width:100%; margin-bottom:18px;" data-i18n="continueGoogle">Continue with Google</button>
+    <div class="authp-divider" data-i18n="or">or</div>
 
-    <div style="text-align:center; color:var(--ink-soft); font-size:.85rem; margin-bottom:18px;" data-i18n="or">or</div>
-
-    <form class="card" id="signup-form" style="max-width:100%;">
-      <div class="field"><label data-i18n="fullName">Full name</label><input type="text" id="name" required></div>
-      <div class="field"><label data-i18n="className">Class</label><input type="text" id="cls" required></div>
-      <div class="field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone" required></div>
-      <div class="field"><label data-i18n="email">Email</label><input type="email" id="email" required></div>
-      <div class="field"><label data-i18n="password">Password</label><input type="password" id="password" required minlength="6"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;" id="submit-btn" data-i18n="createAccount">Create account</button>
+    <form id="signup-form">
+      <div class="authp-field"><label data-i18n="fullName">Full name</label><input type="text" id="name" required></div>
+      <div class="authp-field"><label data-i18n="className">Class</label><input type="text" id="cls" required></div>
+      <div class="authp-field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone" required></div>
+      <div class="authp-field"><label data-i18n="email">Email</label><input type="email" id="email" required></div>
+      <div class="authp-field"><label data-i18n="password">Password</label><input type="password" id="password" required minlength="6"></div>
+      <button type="submit" class="authp-btn-primary" id="submit-btn" data-i18n="createAccount">Create account</button>
     </form>
 
-    <p class="hint" style="margin-top:16px;">
+    <p class="authp-sub" style="margin:18px 0 0; text-align:center;">
       <span data-i18n="alreadyHaveAccount">Already have an account?</span>
       <a href="student-login.html" data-i18n="logIn">Log in</a>
     </p>
   </div>
-</main>
+</div>
 
 <script type="module">
-  import { applyI18n, t } from "./js/i18n.js";
+  import { applyI18n } from "./js/i18n.js";
   import { applyTheme } from "./js/theme.js";
-  import { renderSiteNavExtras } from "./js/site-header.js";
-  import { signUpWithEmail, signUpWithGoogle } from "./js/student-auth.js";
+  import { signUpWithEmail, signUpWithGoogle, setAuthPersistence } from "./js/student-auth.js";
 
   applyTheme();
   applyI18n();
-  renderSiteNavExtras(document.getElementById("nav-extra"));
 
-  const err = document.getElementById("err");
+  const msg = document.getElementById("msg");
+  function showMsg(text, ok = false) {
+    msg.textContent = text;
+    msg.className = "authp-msg show " + (ok ? "ok" : "error");
+  }
 
   document.getElementById("google-btn").addEventListener("click", async () => {
-    err.classList.remove("show");
+    msg.classList.remove("show");
     try {
+      await setAuthPersistence(true);
       await signUpWithGoogle();
       location.href = "profile.html";
     } catch (e) {
-      err.textContent = e.message;
-      err.classList.add("show");
+      showMsg(e.message);
     }
   });
 
   document.getElementById("signup-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    err.classList.remove("show");
+    msg.classList.remove("show");
     const btn = document.getElementById("submit-btn");
     btn.disabled = true;
     try {
+      await setAuthPersistence(true);
       await signUpWithEmail({
         name: document.getElementById("name").value.trim(),
         cls: document.getElementById("cls").value.trim(),
@@ -80,8 +124,7 @@
       });
       location.href = "profile.html";
     } catch (e2) {
-      err.textContent = e2.message;
-      err.classList.add("show");
+      showMsg(e2.message);
       btn.disabled = false;
     }
   });
