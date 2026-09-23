@@ -5,102 +5,277 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Profile — Porikkhaloy</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  body.fbp{ background:var(--paper-2); }
+  .fbp-wrap{ max-width:900px; margin:0 auto; padding:0 0 60px; }
+  .fbp-topbar{
+    max-width:900px; margin:0 auto; padding:16px 20px; display:flex;
+    align-items:center; justify-content:space-between;
+  }
+  .fbp-topbar .brand{ font-family:var(--serif); font-weight:700; color:var(--indigo); text-decoration:none; font-size:1.2rem; }
+  .fbp-topbar-links{ display:flex; align-items:center; gap:16px; font-size:.85rem; }
+  .fbp-topbar-links a{ color:var(--ink-soft); text-decoration:none; cursor:pointer; }
+  .fbp-topbar-links a:hover{ color:var(--indigo); }
+
+  .fbp-cover{
+    height:220px; border-radius:12px 12px 0 0; overflow:hidden;
+    background:linear-gradient(135deg, var(--indigo) 0%, var(--indigo-2) 55%, var(--mustard) 130%);
+    position:relative;
+  }
+  .fbp-card{ background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  :root[data-theme="dark"] .fbp-card{ background:var(--paper); }
+
+  .fbp-head{ padding:0 28px 20px; position:relative; text-align:center; }
+  .fbp-avatar{
+    width:144px; height:144px; border-radius:50%; background:var(--mustard);
+    border:5px solid #fff; margin:-72px auto 0; display:flex; align-items:center;
+    justify-content:center; font-family:var(--serif); font-size:3rem; font-weight:700;
+    color:#2a1c02; box-shadow:0 1px 4px rgba(0,0,0,.15);
+  }
+  :root[data-theme="dark"] .fbp-avatar{ border-color:var(--paper); }
+  .fbp-name{ font-family:var(--serif); font-size:1.7rem; font-weight:700; color:var(--ink); margin:14px 0 2px; }
+  .fbp-sub{ color:var(--ink-soft); font-size:.95rem; margin:0 0 18px; }
+  .fbp-edit-btn{
+    background:var(--indigo); color:#fff; border:none; padding:10px 22px; border-radius:8px;
+    font-weight:600; font-size:.9rem; cursor:pointer; font-family:inherit;
+  }
+  .fbp-edit-btn:hover{ background:var(--indigo-2); }
+
+  .fbp-tabs{ display:flex; gap:4px; border-top:1px solid var(--rule); padding:0 20px; }
+  .fbp-tab{
+    padding:14px 16px; font-size:.9rem; font-weight:600; color:var(--ink-soft);
+    cursor:pointer; border-bottom:3px solid transparent; background:none; border-top:none; border-left:none; border-right:none; font-family:inherit;
+  }
+  .fbp-tab.active{ color:var(--indigo); border-bottom-color:var(--indigo); }
+
+  .fbp-body{ display:grid; grid-template-columns:300px 1fr; gap:20px; margin-top:20px; }
+  @media (max-width:700px){ .fbp-body{ grid-template-columns:1fr; } }
+
+  .fbp-info-card{ padding:20px; }
+  .fbp-info-card h3{ font-size:1.05rem; margin:0 0 14px; }
+  .fbp-info-row{ display:flex; gap:12px; align-items:flex-start; padding:8px 0; font-size:.92rem; color:var(--ink); }
+  .fbp-info-row .ic{ width:20px; text-align:center; }
+  .fbp-info-row .lbl{ color:var(--ink-soft); font-size:.78rem; display:block; }
+
+  .fbp-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:10px; overflow:hidden; margin-bottom:20px; }
+  .fbp-stat{ background:#fff; padding:16px; text-align:center; }
+  :root[data-theme="dark"] .fbp-stat{ background:var(--paper); }
+  .fbp-stat .n{ font-family:var(--serif); font-size:1.6rem; font-weight:700; color:var(--indigo); }
+  .fbp-stat .l{ font-size:.75rem; color:var(--ink-soft); }
+
+  .fbp-post{ padding:18px 20px; border-bottom:1px solid var(--rule); }
+  .fbp-post:last-child{ border-bottom:none; }
+  .fbp-post-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .fbp-post-title{ font-weight:600; color:var(--ink); }
+  .fbp-post-date{ font-size:.78rem; color:var(--ink-soft); }
+  .fbp-post-score{ font-family:var(--serif); font-size:1.3rem; color:var(--indigo); font-weight:700; }
+
+  .fbp-panel{ display:none; }
+  .fbp-panel.active{ display:block; }
+</style>
 </head>
-<body>
+<body class="fbp">
 
-<header class="site-header">
-  <div class="shell">
-    <a href="index.html" class="brand"><span class="brand-bn" data-i18n="brand">Porikkhaloy</span></a>
-    <nav style="display:flex; gap:16px; align-items:center;">
-      <span id="theme-slot"></span>
-      <span id="lang-slot"></span>
-      <a href="#" id="logout-link" class="hint" data-i18n="logOut">Log out</a>
-    </nav>
+<div class="fbp-topbar">
+  <a href="index.html" class="brand">Porikkhaloy</a>
+  <div class="fbp-topbar-links">
+    <a href="index.html">Home</a>
+    <a href="my-exams.html">My Exams</a>
+    <a href="#" id="logout-link">Log out</a>
   </div>
-</header>
+</div>
 
-<main>
-  <div class="shell" style="max-width:640px;">
+<div class="fbp-wrap">
+  <div class="fbp-cover"></div>
+  <div class="fbp-card">
+    <div class="fbp-head">
+      <div class="fbp-avatar" id="avatar">–</div>
+      <div class="fbp-name" id="name-display">Loading…</div>
+      <div class="fbp-sub" id="sub-display"></div>
+      <button class="fbp-edit-btn" id="edit-btn">Edit profile</button>
+    </div>
+    <div class="fbp-tabs">
+      <button class="fbp-tab active" data-tab="about">About</button>
+      <button class="fbp-tab" data-tab="history">Exam History</button>
+    </div>
+  </div>
 
-    <section style="display:flex; align-items:center; gap:18px; margin-bottom:36px;">
-      <div id="avatar" style="width:64px; height:64px; border-radius:50%; background:var(--indigo); color:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:1.5rem; font-weight:600; flex-shrink:0;"></div>
-      <div>
-        <h1 style="font-size:1.5rem; margin-bottom:2px;" id="profile-name" data-i18n="loading">Loading…</h1>
-        <p class="hint" id="profile-email" style="margin:0;"></p>
+  <div class="fbp-body">
+    <div>
+      <div class="fbp-card fbp-info-card fbp-panel active" data-panel="about">
+        <h3>Contact info</h3>
+        <div class="fbp-info-row"><span class="ic">✉️</span><span><span class="lbl">Email</span><span id="info-email">—</span></span></div>
+        <div class="fbp-info-row"><span class="ic">🎓</span><span><span class="lbl">Class</span><span id="info-cls">—</span></span></div>
+        <div class="fbp-info-row"><span class="ic">📱</span><span><span class="lbl">Phone</span><span id="info-phone">—</span></span></div>
       </div>
-    </section>
+      <div class="fbp-card fbp-info-card fbp-panel" data-panel="history" style="display:none;">
+        <h3>All exams</h3>
+        <div id="history-list-side" class="hint">Loading…</div>
+      </div>
+    </div>
 
-    <div class="error-box" id="msg"></div>
-
-    <section class="card" style="max-width:100%; margin-bottom:24px;">
-      <h2 style="font-size:1.05rem; border-bottom:1px solid var(--rule); padding-bottom:12px; margin-bottom:20px;" data-i18n="profileTitle">My Profile</h2>
-      <form id="profile-form">
-        <div class="field"><label data-i18n="fullName">Full name</label><input type="text" id="name"></div>
-        <div class="field"><label data-i18n="className">Class</label><input type="text" id="cls"></div>
-        <div class="field"><label data-i18n="phoneNumber">Phone number</label><input type="tel" id="phone"></div>
-        <div class="field"><label data-i18n="email">Email</label><input type="email" id="email" disabled style="background:var(--paper-2);"></div>
-        <button type="submit" class="btn btn-primary" data-i18n="saveChanges">Save changes</button>
-      </form>
-    </section>
-
-    <section class="card" style="max-width:100%; display:flex; gap:14px; flex-wrap:wrap;">
-      <a href="my-exams.html" class="btn btn-outline" style="flex:1; text-align:center; min-width:160px;" data-i18n="navMyExams">My Exams</a>
-      <a href="index.html#subjects" class="btn btn-outline" style="flex:1; text-align:center; min-width:160px;" data-i18n="navExams">Exams</a>
-    </section>
-
+    <div>
+      <div class="fbp-stats">
+        <div class="fbp-stat"><div class="n" id="stat-attempts">–</div><div class="l">Exams taken</div></div>
+        <div class="fbp-stat"><div class="n" id="stat-avg">–</div><div class="l">Avg score</div></div>
+        <div class="fbp-stat"><div class="n" id="stat-best">–</div><div class="l">Best score</div></div>
+      </div>
+      <div class="fbp-card fbp-panel active" data-panel-main="about">
+        <div id="recent-posts"></div>
+      </div>
+      <div class="fbp-card fbp-panel" data-panel-main="history" style="display:none;">
+        <div id="all-posts"></div>
+      </div>
+    </div>
   </div>
-</main>
+</div>
+
+<!-- Edit profile overlay -->
+<div class="overlay" id="edit-overlay">
+  <div class="overlay-box" style="max-width:420px; text-align:left; border-top-color:var(--indigo);">
+    <h2 style="color:var(--indigo);">Edit profile</h2>
+    <div class="error-box" id="edit-msg"></div>
+    <div class="field"><label>Full name</label><input type="text" id="e-name"></div>
+    <div class="field"><label>Class</label><input type="text" id="e-cls"></div>
+    <div class="field"><label>Phone number</label><input type="tel" id="e-phone"></div>
+    <div class="field"><label>Email</label><input type="email" id="e-email" disabled style="background:var(--paper-2);"></div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" id="e-save-btn">Save changes</button>
+      <button class="btn btn-outline" id="e-cancel-btn" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
-  import { applyI18n, renderLangToggle, t } from "./js/i18n.js";
-  import { applyTheme, renderThemeToggle } from "./js/theme.js";
+  import { applyTheme } from "./js/theme.js";
   import { watchStudentAuth, getStudentProfile, updateStudentProfile, signOutStudent } from "./js/student-auth.js";
+  import { getAllAttempts, getQuiz } from "./js/data.js";
 
   applyTheme();
-  applyI18n();
-  renderLangToggle(document.getElementById("lang-slot"));
-  renderThemeToggle(document.getElementById("theme-slot"));
 
-  const msg = document.getElementById("msg");
-  msg.style.background = "#e2ecdf";
-  msg.style.borderColor = "var(--good)";
-  msg.style.color = "var(--good)";
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+  function initials(name) {
+    if (!name) return "?";
+    return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("");
+  }
 
   let currentUid = null;
+  let currentUser = null;
 
   watchStudentAuth(async (user) => {
     if (!user) {
       location.href = "student-login.html";
       return;
     }
+    currentUser = user;
     currentUid = user.uid;
     const profile = await getStudentProfile(user.uid);
 
-    const name = profile?.name || user.email || "";
-    document.getElementById("name").value = profile?.name || "";
-    document.getElementById("cls").value = profile?.cls || "";
-    document.getElementById("phone").value = profile?.phone || "";
-    document.getElementById("email").value = user.email || "";
+    const name = profile?.name || user.displayName || "Student";
+    document.getElementById("avatar").textContent = initials(name);
+    document.getElementById("name-display").textContent = name;
+    document.getElementById("sub-display").textContent = profile?.cls ? `Class ${profile.cls}` : "Porikkhaloy student";
+    document.getElementById("info-email").textContent = user.email || "—";
+    document.getElementById("info-cls").textContent = profile?.cls || "—";
+    document.getElementById("info-phone").textContent = profile?.phone || "—";
 
-    document.getElementById("profile-name").textContent = name;
-    document.getElementById("profile-email").textContent = user.email || "";
-    document.getElementById("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
+    document.getElementById("e-name").value = profile?.name || "";
+    document.getElementById("e-cls").value = profile?.cls || "";
+    document.getElementById("e-phone").value = profile?.phone || "";
+    document.getElementById("e-email").value = user.email || "";
+
+    await loadExamHistory(user.uid);
   });
 
-  document.getElementById("profile-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!currentUid) return;
-    const name = document.getElementById("name").value.trim();
-    await updateStudentProfile(currentUid, {
-      name,
-      cls: document.getElementById("cls").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
+  async function loadExamHistory(uid) {
+    const all = await getAllAttempts();
+    const mine = all.filter(a => a.student?.uid === uid && a.score !== undefined);
+
+    document.getElementById("stat-attempts").textContent = mine.length;
+    if (mine.length > 0) {
+      const pct = a => a.total ? Math.round((a.score / a.total) * 100) : 0;
+      const avg = Math.round(mine.reduce((s, a) => s + pct(a), 0) / mine.length);
+      const best = Math.max(...mine.map(pct));
+      document.getElementById("stat-avg").textContent = avg + "%";
+      document.getElementById("stat-best").textContent = best + "%";
+    } else {
+      document.getElementById("stat-avg").textContent = "—";
+      document.getElementById("stat-best").textContent = "—";
+    }
+
+    const recentEl = document.getElementById("recent-posts");
+    const allEl = document.getElementById("all-posts");
+    const sideList = document.getElementById("history-list-side");
+
+    if (mine.length === 0) {
+      recentEl.innerHTML = `<div class="fbp-post hint">No exams taken yet — <a href="index.html">browse subjects</a> to get started.</div>`;
+      allEl.innerHTML = recentEl.innerHTML;
+      sideList.textContent = "No exams yet.";
+      return;
+    }
+
+    sideList.textContent = `${mine.length} exam${mine.length > 1 ? "s" : ""} completed.`;
+
+    const rows = [];
+    for (const a of mine) {
+      const quiz = await getQuiz(a.quizId);
+      const when = a.startedAt ? new Date(a.startedAt).toLocaleDateString() : "—";
+      rows.push(`
+        <div class="fbp-post">
+          <div class="fbp-post-head">
+            <span class="fbp-post-title">${escapeHtml(quiz ? quiz.title_bn : a.quizId)}</span>
+            <span class="fbp-post-date">${when}</span>
+          </div>
+          <div class="fbp-post-score">${a.score}/${a.total}</div>
+          ${a.status === "ended-early" ? `<span class="status-tag ended-early">Ended early</span>` : `<span class="status-tag completed">Completed</span>`}
+        </div>
+      `);
+    }
+    allEl.innerHTML = rows.join("");
+    recentEl.innerHTML = rows.slice(0, 3).join("") ||
+      `<div class="fbp-post hint">No exams taken yet.</div>`;
+  }
+
+  // Tabs
+  document.querySelectorAll(".fbp-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".fbp-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      document.querySelectorAll("[data-panel]").forEach(p => p.style.display = p.dataset.panel === tab ? "block" : "none");
+      document.querySelectorAll("[data-panel-main]").forEach(p => p.style.display = p.dataset.panelMain === tab ? "block" : "none");
     });
-    document.getElementById("profile-name").textContent = name || document.getElementById("email").value;
-    document.getElementById("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
-    msg.textContent = t("saved");
-    msg.classList.add("show");
-    setTimeout(() => msg.classList.remove("show"), 2500);
+  });
+
+  // Edit overlay
+  const overlay = document.getElementById("edit-overlay");
+  const editMsg = document.getElementById("edit-msg");
+  document.getElementById("edit-btn").addEventListener("click", () => {
+    editMsg.classList.remove("show");
+    overlay.classList.add("show");
+  });
+  document.getElementById("e-cancel-btn").addEventListener("click", () => overlay.classList.remove("show"));
+  document.getElementById("e-save-btn").addEventListener("click", async () => {
+    if (!currentUid) return;
+    const name = document.getElementById("e-name").value.trim();
+    const cls = document.getElementById("e-cls").value.trim();
+    const phone = document.getElementById("e-phone").value.trim();
+    if (!name) {
+      editMsg.textContent = "Name can't be empty.";
+      editMsg.classList.add("show");
+      return;
+    }
+    await updateStudentProfile(currentUid, { name, cls, phone });
+    overlay.classList.remove("show");
+    document.getElementById("avatar").textContent = initials(name);
+    document.getElementById("name-display").textContent = name;
+    document.getElementById("sub-display").textContent = cls ? `Class ${cls}` : "Porikkhaloy student";
+    document.getElementById("info-cls").textContent = cls || "—";
+    document.getElementById("info-phone").textContent = phone || "—";
   });
 
   document.getElementById("logout-link").addEventListener("click", async (e) => {
