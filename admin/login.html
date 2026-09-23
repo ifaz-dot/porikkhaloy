@@ -32,7 +32,15 @@
 
 <script type="module">
   import { auth, db } from "../js/firebase-config.js";
-  import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  // BUG FIX: signOut must be imported and called as signOut(auth) — the
+  // modular v9 Firebase SDK does NOT expose auth.signOut() as a method
+  // on the auth instance. The old code called `auth.signOut()` directly,
+  // which threw a TypeError at runtime. Because that line ran outside
+  // any try/catch, the error was uncaught: the "not an admin" message
+  // still flashed on screen, but the function then crashed and the
+  // rejected (non-admin) user was NEVER actually signed out — they
+  // stayed authenticated in the browser.
+  import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const err = document.getElementById("err");
@@ -54,7 +62,7 @@
       if (!adminDoc.exists()) {
         err.textContent = "এই অ্যাকাউন্টের অ্যাডমিন অনুমতি নেই।";
         err.classList.add("show");
-        await auth.signOut();
+        await signOut(auth);
         btn.disabled = false;
         btn.textContent = "লগইন করো";
         return;
